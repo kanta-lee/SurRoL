@@ -29,8 +29,8 @@ masks = []
 
 
 def main():
-    env = gym.make(args.env, render_mode='human')  # 'human'
-    num_itr = 100 if not args.video else 1
+    env = gym.make(args.env, render_mode='rgb_array')  # 'human'
+    num_itr = 100 if not args.video else 10
     cnt = 0
     init_state_space = 'random'
     env.reset()
@@ -41,7 +41,7 @@ def main():
         args.steps = env._max_episode_steps
 
     print()
-    while len(actions) < num_itr:
+    while cnt < num_itr:
         obs = env.reset()
         print("ITERATION NUMBER ", len(actions))
         goToGoal(env, obs)

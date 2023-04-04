@@ -24,7 +24,7 @@ class EcmEnv(SurRoLEnv):
     """
     ACTION_SIZE = 3  # (dx, dy, dz) or cVc or droll (1)
     ACTION_MODE = 'cVc'
-    DISTANCE_THRESHOLD = 0.005
+    DISTANCE_THRESHOLD = 0.05
     POSE_ECM = ((-0.05, 0, 1.0024), (0, 30 / 180 * np.pi, 0))
     QPOS_ECM = (0, 0, 0.05, 0)
     WORKSPACE_LIMITS = ((0.45, 0.55), (-0.05, 0.05), (0.60, 0.70))

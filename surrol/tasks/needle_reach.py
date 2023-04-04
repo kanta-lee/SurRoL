@@ -42,10 +42,18 @@ class NeedleReach(PsmEnv):
         self.obj_ids['fixed'].append(obj_id)  # 1
 
         # needle
-        yaw = (np.random.rand() - 0.5) * np.pi
+        # yaw = (np.random.rand() - 0.5) * np.pi
+        # obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
+        #                     (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,
+        #                      workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
+        #                      workspace_limits[2][0] + 0.01),
+        #                     p.getQuaternionFromEuler((0, 0, yaw)),
+        #                     useFixedBase=False,
+        #                     globalScaling=self.SCALING)
+        yaw = 0 * np.pi
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
-                            (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,
-                             workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
+                            (workspace_limits[0].mean() ,
+                             workspace_limits[1].mean() ,
                              workspace_limits[2][0] + 0.01),
                             p.getQuaternionFromEuler((0, 0, yaw)),
                             useFixedBase=False,

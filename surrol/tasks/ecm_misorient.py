@@ -19,7 +19,7 @@ from surrol.const import ASSET_DIR_PATH
 class MisOrient(EcmEnv):
     ACTION_SIZE = 1  # droll
     ACTION_MODE = 'droll'
-    DISTANCE_THRESHOLD = 0.01
+    DISTANCE_THRESHOLD = 0.05
     QPOS_ECM = (0, 0, 0.05, 0)
     WORKSPACE_LIMITS = ((-0.6, 0.4), (-0.8, 0.8), (0.02, 0.02))
     CUBE_NUMBER = (9, 16)

@@ -14,7 +14,7 @@ from surrol.const import ASSET_DIR_PATH
 
 class StaticTrack(EcmEnv):
     ACTION_MODE = 'cVc'
-    DISTANCE_THRESHOLD = 0.01
+    DISTANCE_THRESHOLD = 0.05
     QPOS_ECM = (0, 0, 0.04, 0)
     WORKSPACE_LIMITS = ((-0.5, 0.5), (-0.4, 0.4), (0.05, 0.05))
     CUBE_NUMBER = 18

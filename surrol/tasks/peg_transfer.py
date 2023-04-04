@@ -1,14 +1,13 @@
 import os
 import time
-import numpy as np
+from turtle import pos
 
+import numpy as np
 import pybullet as p
-from surrol.tasks.psm_env import PsmEnv, goal_distance
-from surrol.utils.pybullet_utils import (
-    get_link_pose,
-    wrap_angle
-)
+
 from surrol.const import ASSET_DIR_PATH
+from surrol.tasks.psm_env import PsmEnv, goal_distance
+from surrol.utils.pybullet_utils import get_link_pose, wrap_angle
 
 
 class PegTransfer(PsmEnv):
@@ -41,6 +40,7 @@ class PegTransfer(PsmEnv):
         self._pegs = np.arange(12)
         np.random.shuffle(self._pegs[:6])
         np.random.shuffle(self._pegs[6: 12])
+        #self._pegs = [ 1 , 2 , 3 , 4 , 5 , 0 , 7 ,11 , 9 ,10 , 6 , 8]
 
         # blocks
         num_blocks = 4
@@ -56,10 +56,13 @@ class PegTransfer(PsmEnv):
             self.obj_ids['rigid'].append(obj_id)
         self._blocks = np.array(self.obj_ids['rigid'][-num_blocks:])
         np.random.shuffle(self._blocks)
+        #self._blocks = [5,8,7,6]
         for obj_id in self._blocks[:1]:
             # change color to red
             p.changeVisualShape(obj_id, -1, rgbaColor=(255 / 255, 69 / 255, 58 / 255, 1))
         self.obj_id, self.obj_link1 = self._blocks[0], 1
+        #print(self._pegs, self.obj_id, self._blocks)
+
 
     def _is_success(self, achieved_goal, desired_goal):
         """ Indicates whether or not the achieved goal successfully achieved the desired goal.
@@ -80,7 +83,7 @@ class PegTransfer(PsmEnv):
         """ Define waypoints
         """
         super()._sample_goal_callback()
-        self._waypoints = [None, None, None, None, None, None]  # six waypoints
+        self._waypoints = [None, None, None, None, None, None, None]  # six waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
         orn = p.getEulerFromQuaternion(orn_obj)
         orn_eef = get_link_pose(self.psm1.body, self.psm1.EEF_LINK_INDEX)[1]
@@ -103,7 +106,10 @@ class PegTransfer(PsmEnv):
         pos_place = [self.goal[0] + pos_obj[0] - pos_peg[0],
                      self.goal[1] + pos_obj[1] - pos_peg[1], self._waypoints[0][2]]  # consider offset
         self._waypoints[4] = np.array([pos_place[0], pos_place[1], pos_place[2], yaw, -0.5])  # above goal
-        self._waypoints[5] = np.array([pos_place[0], pos_place[1], pos_place[2], yaw, 0.5])  # release
+        self._waypoints[5] = np.array([pos_place[0], pos_place[1], self._waypoints[2][2], yaw, -0.5])  # release
+        #self._waypoints[5] = np.array([pos_place[0], pos_place[1], pos_place[2], yaw, 0.5])  # release
+        self._waypoints[6] = np.array([pos_place[0], pos_place[1], self._waypoints[2][2], yaw, 0.5])  # release
+        self.waypoints = self._waypoints.copy()
 
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
@@ -119,6 +125,9 @@ class PegTransfer(PsmEnv):
         for i, waypoint in enumerate(self._waypoints):
             if waypoint is None:
                 continue
+            # if i == 3:
+            #     delta_pos = (waypoint[:3] - obs['achieved_goal'][:3]) / 0.01 / self.SCALING
+            # else:
             delta_pos = (waypoint[:3] - obs['observation'][:3]) / 0.01 / self.SCALING
             delta_yaw = (waypoint[3] - obs['observation'][5]).clip(-0.4, 0.4)
             if np.abs(delta_pos).max() > 1:
@@ -129,8 +138,43 @@ class PegTransfer(PsmEnv):
             if np.linalg.norm(delta_pos) * 0.01 / scale_factor < 2e-3 and np.abs(delta_yaw) < np.deg2rad(2.):
                 self._waypoints[i] = None
             break
-
+        
         return action
+
+    def subgoal_grasp(self):
+        scale_factor = 0.7
+        # robot_state
+        robot_state = self._get_robot_state(idx=0)
+        pos_robot = robot_state[:3]
+        yaw_robot = robot_state[5]
+        orn_eef = get_link_pose(self.psm1.body, self.psm1.EEF_LINK_INDEX)[1]
+        orn_eef = p.getEulerFromQuaternion(orn_eef)
+        yaw_angle = robot_state[-1]
+
+        pos_tip = np.array(get_link_pose(self.psm1.body, self.psm1.TIP_LINK_INDEX)[0])
+
+        # object pose
+        pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
+        orn = p.getEulerFromQuaternion(orn_obj)
+        yaw_grasp = orn[2] if abs(wrap_angle(orn[2] - orn_eef[2])) < abs(wrap_angle(orn[2] + np.pi - orn_eef[2])) \
+            else wrap_angle(orn[2] + np.pi)  # minimize the delta yaw
+
+        pos_grasp = np.array([pos_obj[0], pos_obj[1],
+                    pos_obj[2]])  # grasp
+
+        # is_success
+        is_grasp = yaw_angle < 0.2  # TODO: fine-tune
+        is_success = self._is_success(pos_grasp, pos_tip) #and (is_grasp or self._meet_contact_constraint_requirement())
+        return is_success.astype(np.float32)
+
+    def is_success(self, achieved_goal, desired_goal):
+        """ Indicates whether or not the achieved goal successfully achieved the desired goal.
+        """
+        return self._is_success(achieved_goal, desired_goal)
+
+    @property
+    def pegs(self):
+        return self._pegs
 
 
 if __name__ == "__main__":

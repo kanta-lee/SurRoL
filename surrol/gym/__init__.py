@@ -36,7 +36,7 @@ register(
 register(
     id='BiPegTransfer-v0',
     entry_point='surrol.tasks.peg_transfer_bimanual:BiPegTransfer',
-    max_episode_steps=50,
+    max_episode_steps=100,
 )
 
 # ECM Env
@@ -62,4 +62,16 @@ register(
     id='ActiveTrack-v0',
     entry_point='surrol.tasks.ecm_active_track:ActiveTrack',
     max_episode_steps=500,
+)
+
+register(
+    id='BiPegBoard-v0',
+    entry_point='surrol.tasks.peg_board_bimanual:BiPegBoard',
+    max_episode_steps=100,
+)
+
+register(
+    id='MatchBoard-v0',
+    entry_point='surrol.tasks.match_board:MatchBoard',
+    max_episode_steps=150,
 )

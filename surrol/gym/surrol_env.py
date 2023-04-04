@@ -72,7 +72,7 @@ class SurRoLEnv(gym.Env):
         self.goal = self._sample_goal()  # tasks are all implicitly goal-based
         self._sample_goal_callback()
         obs = self._get_obs()
-        self.action_space = spaces.Box(-1., 1., shape=(self.action_size,), dtype='float32')
+        self.action_space = spaces.Box(-1, 1, shape=(self.action_size,), dtype='float32')
         if isinstance(obs, np.ndarray):
             # gym.Env
             self.observation_space = spaces.Box(-np.inf, np.inf, shape=obs.shape, dtype='float32')
