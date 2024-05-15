@@ -2,8 +2,8 @@ import os
 import time
 import numpy as np
 
-import pybullet as p
-from surrol.tasks.psm_env import PsmEnv
+import pybullet as p 
+from surrol.tasks.psm_env_full import PsmEnv
 from surrol.utils.pybullet_utils import (
     get_link_pose,
     reset_camera,    
@@ -14,11 +14,23 @@ from surrol.tasks.ecm_env import EcmEnv, goal_distance
 from surrol.robots.ecm import RENDER_HEIGHT, RENDER_WIDTH, FoV
 from surrol.const import ASSET_DIR_PATH
 from surrol.robots.ecm import Ecm
+from surrol.utils.robotics import (
+    get_euler_from_matrix,
+    get_matrix_from_euler
+)
+# load and define the MTM
+# import dvrk
+# import numpy as np
+# import rospy
+# import time
+# import math
+# # move in cartesian space
+# import PyKDL
 
-
-class NeedlePick(PsmEnv):
+# from dvrk import mtm
+class NeedlePickFullDof(PsmEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
-    WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.685, 0.745))  # reduce tip pad contact
+    WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.695, 0.745))  # reduce tip pad contact
     SCALING = 5.
     QPOS_ECM = (0, 0.6, 0.04, 0)
     ACTION_ECM_SIZE=3
@@ -26,7 +38,7 @@ class NeedlePick(PsmEnv):
 
     # TODO: grasp is sometimes not stable; check how to fix it
     def __init__(self, render_mode=None, cid = -1):
-        super(NeedlePick, self).__init__(render_mode, cid)
+        super(NeedlePickFullDof, self).__init__(render_mode, cid)
         self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.375 * self.SCALING),
             distance=1.81 * self.SCALING,
@@ -38,7 +50,7 @@ class NeedlePick(PsmEnv):
 
 
     def _env_setup(self):
-        super(NeedlePick, self)._env_setup()
+        super(NeedlePickFullDof, self)._env_setup()
         # np.random.seed(4)  # for experiment reproduce
         self.has_object = True
         self._waypoint_goal = True
@@ -62,6 +74,7 @@ class NeedlePick(PsmEnv):
                (workspace_limits[2][1] + workspace_limits[2][0]) / 2)
         orn = (0.5, 0.5, -0.5, -0.5)
         joint_positions = self.psm1.inverse_kinematics((pos, orn), self.psm1.EEF_LINK_INDEX)
+        print(f"inverse kinemetics return number: {len(joint_positions)}")
         self.psm1.reset_joint(joint_positions)
         self.block_gripper = False
         # physical interaction
@@ -76,7 +89,7 @@ class NeedlePick(PsmEnv):
 
         # needle
         yaw = (np.random.rand() - 0.5) * np.pi
-        obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm_RL.urdf'),
+        obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
                             (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,  # TODO: scaling
                              workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
                              workspace_limits[2][0] + 0.01),
@@ -86,7 +99,42 @@ class NeedlePick(PsmEnv):
         p.changeVisualShape(obj_id, -1, specularColor=(80, 80, 80))
         self.obj_ids['rigid'].append(obj_id)  # 0
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
+        # self.m = mtm('MTMR')
 
+        # # turn gravity compensation on/off
+        # self.m.use_gravity_compensation(True)
+        # self.m.body.servo_cf(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+
+
+        # psm_pose = self.psm1.get_current_position()
+        # print(f"PSM pose RCM: {psm_pose}")
+        # print("PSM current orn", get_euler_from_matrix(psm_pose[:3,:3]))
+        # psm_pose_ori = psm_pose.copy()
+
+        # # psm_measured_cp = np.matmul(np.linalg.inv(ecm_pose), psm_pose_ori)#over ecm's rcm
+        # psm_measured_cp=psm_pose_ori #not over ecm
+        # # psm_measured_cp= np.matmul(psm1_transform,psm_measured_cp) #over ecm,then transform
+        # # psm_measured_cp = np.matmul(psm_pose_ori,psm1_transform)
+        # print(f"PSM  pose: {psm_measured_cp}")
+        # print(f"mtm orientation{self.m.setpoint_cp().M}")
+        # goal = PyKDL.Frame()
+        # goal.p = self.m.setpoint_cp().p
+        # # # goal.p[0] += 0.05
+        # goal.M= self.m.setpoint_cp().M
+
+        # # psm_measured_cp = np.matmul(mapping_mat,psm_measured_cp)
+        # for i in range(3):
+        #     print(f"previous goal:{goal.M}")
+        #     for j in range(3):
+        #         goal.M[i,j]=psm_measured_cp[i][j]
+        #         # if j==1:
+        #         #     goal.M[i,j]*=-1
+        #         # goal.M[i,j]=psm_pose[i][j]
+        #     print(f"modified goal:{goal.M}")
+        # print(goal.M.GetEulerZYX())
+        # # print(rotationMatrixToEulerAngles(psm_measured_cp[:3,:3]))
+        # self.m.move_cp(goal).wait() #align
+        # print("orn after align: ",self.m.measured_cp().M.GetEulerZYX())
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
         """
@@ -121,14 +169,14 @@ class NeedlePick(PsmEnv):
         # print("Cartesian: {}".format(self.psm1.get_current_position()))
         # self.psm1.reset_joint(qs)
 
-        self._waypoints[0] = np.array([pos_obj[0], pos_obj[1],
-                                       pos_obj[2] + (-0.0007 + 0.0102 + 0.005) * self.SCALING, yaw, 0.5])  # approach
-        self._waypoints[1] = np.array([pos_obj[0], pos_obj[1],
-                                       pos_obj[2] + (-0.0007 + 0.0102) * self.SCALING, yaw, 0.5])  # approach
-        self._waypoints[2] = np.array([pos_obj[0], pos_obj[1],
-                                       pos_obj[2] + (-0.0007 + 0.0102) * self.SCALING, yaw, -0.5])  # grasp
-        self._waypoints[3] = np.array([self.goal[0], self.goal[1],
-                                       self.goal[2] + 0.0102 * self.SCALING, yaw, -0.5])  # lift up
+        # self._waypoints[0] = np.array([pos_obj[0], pos_obj[1],
+        #                                pos_obj[2] + (-0.0007 + 0.0102 + 0.005) * self.SCALING, yaw, 0.5])  # approach
+        # self._waypoints[1] = np.array([pos_obj[0], pos_obj[1],
+        #                                pos_obj[2] + (-0.0007 + 0.0102) * self.SCALING, yaw, 0.5])  # approach
+        # self._waypoints[2] = np.array([pos_obj[0], pos_obj[1],
+        #                                pos_obj[2] + (-0.0007 + 0.0102) * self.SCALING, yaw, -0.5])  # grasp
+        # self._waypoints[3] = np.array([self.goal[0], self.goal[1],
+        #                                self.goal[2] + 0.0102 * self.SCALING, yaw, -0.5])  # lift up
 
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
@@ -143,21 +191,21 @@ class NeedlePick(PsmEnv):
         Define a human expert strategy
         """
         # four waypoints executed in sequential order
-        action = np.zeros(5)
-        action[4] = -0.5
-        for i, waypoint in enumerate(self._waypoints):
-            if waypoint is None:
-                continue
-            delta_pos = (waypoint[:3] - obs['observation'][:3]) / 0.01 / self.SCALING
-            delta_yaw = (waypoint[3] - obs['observation'][5]).clip(-0.4, 0.4)
-            if np.abs(delta_pos).max() > 1:
-                delta_pos /= np.abs(delta_pos).max()
-            scale_factor = 0.4
-            delta_pos *= scale_factor
-            action = np.array([delta_pos[0], delta_pos[1], delta_pos[2], delta_yaw, waypoint[4]])
-            if np.linalg.norm(delta_pos) * 0.01 / scale_factor < 1e-4 and np.abs(delta_yaw) < 1e-2:
-                self._waypoints[i] = None
-            break
+        action = np.zeros(7)
+        action[6] = -0.5
+        # for i, waypoint in enumerate(self._waypoints):
+        #     if waypoint is None:
+        #         continue
+        #     delta_pos = (waypoint[:3] - obs['observation'][:3]) / 0.01 / self.SCALING
+        #     delta_yaw = (waypoint[3] - obs['observation'][5]).clip(-0.4, 0.4)
+        #     if np.abs(delta_pos).max() > 1:
+        #         delta_pos /= np.abs(delta_pos).max()
+        #     scale_factor = 0.4
+        #     delta_pos *= scale_factor
+        #     action = np.array([delta_pos[0], delta_pos[1], delta_pos[2], delta_yaw, waypoint[4]])
+        #     if np.linalg.norm(delta_pos) * 0.01 / scale_factor < 1e-4 and np.abs(delta_yaw) < 1e-2:
+        #         self._waypoints[i] = None
+        #     break
 
         return action
     def _set_action_ecm(self, action):
@@ -172,7 +220,7 @@ class NeedlePick(PsmEnv):
 
 
 if __name__ == "__main__":
-    env = NeedlePick(render_mode='human')  # create one process and corresponding env
+    env = NeedlePickFullDof(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

@@ -3,7 +3,7 @@ import time
 import numpy as np
 
 import pybullet as p
-from surrol.tasks.psm_env import PsmEnv, goal_distance
+from surrol.tasks.psm_env_full import PsmEnv, goal_distance
 from surrol.utils.pybullet_utils import (
     get_link_pose,
     reset_camera,
@@ -15,10 +15,10 @@ from surrol.robots.ecm import RENDER_HEIGHT, RENDER_WIDTH, FoV
 from surrol.const import ASSET_DIR_PATH
 from surrol.robots.ecm import Ecm
 
-
-class PegTransfer(PsmEnv):
+    
+class PegTransferFullDof(PsmEnv):
     POSE_BOARD = ((0.55, 0, 0.6861), (0, 0, 0))  # 0.675 + 0.011 + 0.001
-    WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.686, 0.745))
+    WORKSPACE_LIMITS = (0.51, 0.7), (-0.07, 0.07), (0.675, 0.745)
     SCALING = 5.
 
     QPOS_ECM = (0, 0.6, 0.04, 0)
@@ -29,7 +29,7 @@ class PegTransfer(PsmEnv):
     # TODO: grasp is sometimes not stable; check how to fix it
 
     def __init__(self, render_mode=None, cid = -1):
-        super(PegTransfer, self).__init__(render_mode, cid)
+        super(PegTransferFullDof, self).__init__(render_mode, cid)
         self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.375 * self.SCALING),
             distance=1.81 * self.SCALING,
@@ -40,7 +40,7 @@ class PegTransfer(PsmEnv):
         )
 
     def _env_setup(self):
-        super(PegTransfer, self)._env_setup()
+        super(PegTransferFullDof, self)._env_setup()
         self.has_object = True
 
         # camera
@@ -50,9 +50,12 @@ class PegTransfer(PsmEnv):
         self.ecm = Ecm((0.15, 0.0, 0.8524), #p.getQuaternionFromEuler((0, 30 / 180 * np.pi, 0)),
                        scaling=self.SCALING)
         self.ecm.reset_joint(self.QPOS_ECM)
+
+
         # self.ecm.reset_joint((3.3482885360717773, -0.0017351149581372738, 4.2447919845581055,0))
         # robot
-        workspace_limits = self.workspace_limits1
+        workspace_limits = (np.asarray(self.WORKSPACE_LIMITS) \
+                           + np.array([0., 0., 0.0102]).reshape((3, 1)))*self.SCALING 
         pos = (workspace_limits[0][0],
                workspace_limits[1][1],
                workspace_limits[2][1])
@@ -67,15 +70,15 @@ class PegTransfer(PsmEnv):
                             p.getQuaternionFromEuler(self.POSE_BOARD[1]),
                             globalScaling=self.SCALING)
         self.obj_ids['fixed'].append(obj_id)  # 1
-        # print(f'peg transfer\' board size: {p.getVisualShapeData(obj_id)}')
+        
         # group = 1#other objects don't collide with me
         # mask=1 # don't collide with any other object
         # p.setCollisionFilterGroupMask(obj_id, 0,group, mask)
         self._pegs = np.arange(12)
         np.random.shuffle(self._pegs[:6])
         np.random.shuffle(self._pegs[6: 12])
-        # print(self._pegs)
-        self._pegs = [2,1,0,3,4,5,6,7,9,11,10,8]
+        print(self._pegs)
+        self._pegs = [2,1,0,3,4,5,9,7,6,11,10,8]
         self._cnt = 0
         # blocks
         num_blocks = 4
@@ -88,40 +91,17 @@ class PegTransfer(PsmEnv):
                                 p.getQuaternionFromEuler((0, 0, yaw)),
                                 useFixedBase=False,
                                 globalScaling=self.SCALING)
-            # print(f"peg obj id: {obj_id}.")
+            print(f"peg obj id: {obj_id}.")
             self.obj_ids['rigid'].append(obj_id)
         self._blocks = np.array(self.obj_ids['rigid'][-num_blocks:])
-        # print(f'peg transfer\' peg size: {p.getVisualShapeData(obj_id)}')
-
-        np.random.shuffle(self._blocks)
+        # np.random.shuffle(self._blocks)
         for obj_id in self._blocks[:1]:
             # change color to red
             p.changeVisualShape(obj_id, -1, rgbaColor=(255 / 255, 69 / 255, 58 / 255, 1))
         self.obj_id, self.obj_link1 = self._blocks[0], -1
 
-        # self._pegs = [2,1,0,3,4,5,6,7,9,11,10,8]
-        # self._pegs = [3,1,4,5,6,8,0,2,7,9,10,11]
-        # # blocks
-        # num_blocks = 6
-        # # for i in range(6, 6 + num_blocks):
-        # for i in self._pegs[6: 6 + num_blocks]:
-        #     pos, orn = get_link_pose(self.obj_ids['fixed'][1], i)
-        #     yaw = (np.random.rand() - 0.5) * np.deg2rad(60)
-        #     obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'block/block_haptic.urdf'),
-        #                         np.array(pos) + np.array([0, 0, 0.03]),
-        #                         p.getQuaternionFromEuler((0, 0, yaw)),
-        #                         useFixedBase=False,
-        #                         globalScaling=self.SCALING)
-        #     print(f"peg obj id: {obj_id}.")
-        #     self.obj_ids['rigid'].append(obj_id)
-        # self._blocks = np.array(self.obj_ids['rigid'][-num_blocks:])
-        # # np.random.shuffle(self._blocks)
-        # for obj_id in self._blocks[:3]:
-        #     # change color to red
-        #     p.changeVisualShape(obj_id, -1, rgbaColor=(255 / 255, 69 / 255, 58 / 255, 1))
-        # self.obj_id, self.obj_link1 = self._blocks[2], -1
-        # print(self.obj_ids['fixed'])
-        # print(f'goal peg:{obj_id}')
+        print(self.obj_ids['fixed'])
+        print(f'goal peg:{obj_id}')
     def _is_success(self, achieved_goal, desired_goal):
         """ Indicates whether or not the achieved goal successfully achieved the desired goal.
         """
@@ -191,7 +171,6 @@ class PegTransfer(PsmEnv):
             pose = get_link_pose(self.obj_id, -1)
             # print(f'meet by checking distance')
             return pose[0][2] > self.goal[2] + 0.01 * self.SCALING
-        return False
 
     def get_oracle_action(self, obs) -> np.ndarray:
         """
@@ -224,12 +203,12 @@ class PegTransfer(PsmEnv):
         pos, _ = self.ecm.pose_rcm2world(pose_rcm, 'tuple')
         joint_positions = self.ecm.inverse_kinematics((pos, None), self.ecm.EEF_LINK_INDEX)  # do not consider orn
         self.ecm.move_joint(joint_positions[:self.ecm.DoF])
-
+        
     def _reset_ecm_pos(self):
         self.ecm.reset_joint(self.QPOS_ECM)
-        
+
 if __name__ == "__main__":
-    env = PegTransfer(render_mode='human')  # create one process and corresponding env
+    env = PegTransferFullDof(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

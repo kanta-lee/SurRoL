@@ -60,5 +60,12 @@ def get_intrinsic_matrix(width, height, fov):
     cx, cy = width / 2., height / 2.
     mat = np.array([[fx, 0, cx],
                     [0, fy, cy],
-                    [0, 0, 1]]).astype(np.float)
+                    [0, 0, 1]]).astype(np.float32)
     return mat
+
+# soft body related
+def add_value_to_tensor(x, dim, v):
+    x[dim] += v
+
+def set_value_of_tensor(x, dim, v):
+    x[dim] = v

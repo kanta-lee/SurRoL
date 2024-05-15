@@ -79,7 +79,7 @@ class WandBLogger:
             resume=exp_name,
             project=project_name,
             config=filtered_config,
-            dir=path,
+            dir=str(path),
             entity=entity,
             notes=conf.notes if 'notes' in conf else ''
         )

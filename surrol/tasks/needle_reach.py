@@ -3,22 +3,26 @@ import time
 import numpy as np
 
 import pybullet as p
-from surrol.tasks.psm_env import PsmEnv
+from surrol.tasks.psm_env_full import PsmEnv
 from surrol.utils.pybullet_utils import (
     get_link_pose,
     reset_camera,    
     wrap_angle
 )
 from surrol.const import ASSET_DIR_PATH
-from surrol.tasks.psm_env import PsmEnv
 
 from surrol.tasks.ecm_env import EcmEnv, goal_distance
 
 from surrol.robots.ecm import RENDER_HEIGHT, RENDER_WIDTH, FoV
 from surrol.const import ASSET_DIR_PATH
 from surrol.robots.ecm import Ecm
-
-class NeedleReach(PsmEnv):
+# import dvrk
+# import rospy
+# import math
+# # move in cartesian space
+# import PyKDL
+# from dvrk import mtm
+class NeedleReachFullDof(PsmEnv):
     """
     Refer to Gym FetchReach
     https://github.com/openai/gym/blob/master/gym/envs/robotics/fetch/reach.py
@@ -29,7 +33,7 @@ class NeedleReach(PsmEnv):
     QPOS_ECM = (0, 0.6, 0.04, 0)
     ACTION_ECM_SIZE=3
     def __init__(self, render_mode=None, cid = -1):
-        super(NeedleReach, self).__init__(render_mode, cid)
+        super(NeedleReachFullDof, self).__init__(render_mode, cid)
         self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.375 * self.SCALING),
             distance=1.81 * self.SCALING,
@@ -39,7 +43,7 @@ class NeedleReach(PsmEnv):
             upAxisIndex=2
         )
     def _env_setup(self):
-        super(NeedleReach, self)._env_setup()
+        super(NeedleReachFullDof, self)._env_setup()
         self.has_object = False
 
         # camera
@@ -60,7 +64,7 @@ class NeedleReach(PsmEnv):
         orn = (0.5, 0.5, -0.5, -0.5)
         joint_positions = self.psm1.inverse_kinematics((pos, orn), self.psm1.EEF_LINK_INDEX)
         self.psm1.reset_joint(joint_positions)
-        self.block_gripper = True
+        self.block_gripper = False
 
         # tray pad
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'tray/tray_pad.urdf'),
@@ -72,20 +76,53 @@ class NeedleReach(PsmEnv):
 
         # needle
         yaw = (np.random.rand() - 0.5) * np.pi
-        obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
-                            (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,
-                             workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
-                             workspace_limits[2][0] + 0.01),
-                            p.getQuaternionFromEuler((0, 0, yaw)),
-                            useFixedBase=False,
-                            globalScaling=self.SCALING)
-        p.changeVisualShape(obj_id, -1, specularColor=(80, 80, 80))
-        self.obj_ids['rigid'].append(obj_id)  # 0
-        self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
+        # obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
+        #                     (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,
+        #                      workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
+        #                      workspace_limits[2][0] + 0.01),
+        #                     p.getQuaternionFromEuler((0, 0, yaw)),
+        #                     useFixedBase=False,
+        #                     globalScaling=self.SCALING)
+        # p.changeVisualShape(obj_id, -1, specularColor=(80, 80, 80))
+        # self.obj_ids['rigid'].append(obj_id)  # 0
+        self.obj_id, self.obj_link1 = self.obj_ids['fixed'][0], -1
 
-    def _set_action(self, action: np.ndarray):
-        action[3] = 0  # no yaw change
-        super(NeedleReach, self)._set_action(action)
+        # self.m = mtm('MTMR')
+
+        # # turn gravity compensation on/off
+        # self.m.use_gravity_compensation(True)
+        # self.m.body.servo_cf(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+
+
+        # psm_pose = self.psm1.get_current_position()
+        # print(f"PSM pose RCM: {psm_pose}")
+        # psm_pose_ori = psm_pose.copy()
+
+        # # psm_measured_cp = np.matmul(np.linalg.inv(ecm_pose), psm_pose_ori)#over ecm's rcm
+        # psm_measured_cp=psm_pose_ori #not over ecm
+
+        # goal = PyKDL.Frame()
+        # goal.p = self.m.setpoint_cp().p
+        # # # goal.p[0] += 0.05
+        # goal.M= self.m.setpoint_cp().M
+
+        # # psm_measured_cp = np.matmul(mapping_mat,psm_measured_cp)
+        # for i in range(3):
+        #     print(f"previous goal:{goal.M}")
+        #     for j in range(3):
+        #         goal.M[i,j]=psm_measured_cp[i][j]
+        #         # if j==1:
+        #         #     goal.M[i,j]*=-1
+        #         # goal.M[i,j]=psm_pose[i][j]
+        #     print(f"modified goal:{goal.M}")
+        # print(goal.M.GetEulerZYX())
+        # # print(rotationMatrixToEulerAngles(psm_measured_cp[:3,:3]))
+        # self.m.move_cp(goal).wait() #align
+
+    # def _set_action(self, action: np.ndarray):
+    #     # action[3] = 0  # no yaw change
+    #     print('action here')
+    #     super(NeedleReachFullDof, self)._set_action(action)
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -119,7 +156,7 @@ class NeedleReach(PsmEnv):
         self.ecm.reset_joint(self.QPOS_ECM)
 
 if __name__ == "__main__":
-    env = NeedleReach(render_mode='human')  # create one process and corresponding env
+    env = NeedleReachFullDof(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

@@ -1,9 +1,10 @@
 import os
 import time
 import numpy as np
-
+import random
 import pybullet as p
-from surrol.tasks.psm_env import PsmsEnv, goal_distance
+
+from surrol.tasks.psm_env_full import PsmsEnv, goal_distance
 from surrol.utils.pybullet_utils import (
     get_link_pose,
     reset_camera, 
@@ -15,7 +16,14 @@ from surrol.robots.ecm import RENDER_HEIGHT, RENDER_WIDTH, FoV
 from surrol.const import ASSET_DIR_PATH
 from surrol.robots.ecm import Ecm
 
-class NeedleRings(PsmsEnv):
+# # load and define the MTM
+# import numpy as np
+# import time
+# # move in cartesian space
+# import PyKDL
+# from dvrk import mtm
+
+class NeedleRingsFullDof(PsmsEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
     WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.685, 0.745))  # reduce tip pad contact
 
@@ -27,7 +35,7 @@ class NeedleRings(PsmsEnv):
     #for haptic device demo  
     haptic=True
     def __init__(self, render_mode=None, cid = -1):
-        super(NeedleRings, self).__init__(render_mode, cid)
+        super(NeedleRingsFullDof, self).__init__(render_mode, cid)
         self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.375 * self.SCALING),
             distance=1.81 * self.SCALING,
@@ -38,8 +46,68 @@ class NeedleRings(PsmsEnv):
         )
 
     def _env_setup(self):
-        super(NeedleRings, self)._env_setup()
+        super(NeedleRingsFullDof, self)._env_setup()
         self.has_object = True
+
+        # self.ml = mtm('MTML')
+
+        # # turn gravity compensation on/off
+        # self.ml.use_gravity_compensation(True)
+        # self.ml.body.servo_cf(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+
+        # self.mr = mtm('MTMR')
+
+        # # turn gravity compensation on/off
+        # self.mr.use_gravity_compensation(True)
+        # self.mr.body.servo_cf(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+
+        # psmr_pose = self.psm1.get_current_position() #psm1 right, psm1 left
+        # print(f"PSM pose RCM: {psmr_pose}")
+        # psmr_measured_cp = psmr_pose.copy()
+        # print(f"PSM  pose: {psmr_measured_cp}")
+        # print(f"mtm orientation{self.mr.setpoint_cp().M}")
+        # goal_r = PyKDL.Frame()
+        # goal_r.p = self.mr.setpoint_cp().p
+        # # # goal.p[0] += 0.05
+        # goal_r.M= self.mr.setpoint_cp().M
+
+        # for i in range(3):
+        #     print(f"previous goal:{goal_r.M}")
+        #     for j in range(3):
+        #         goal_r.M[i,j]=psmr_measured_cp[i][j]
+        #         # if j==1:
+        #         #     goal.M[i,j]*=-1
+        #         # goal.M[i,j]=psm_pose[i][j]
+        #     print(f"modified goal:{goal_r.M}")
+        # print(goal_r.M.GetEulerZYX())
+        # # print(rotationMatrixToEulerAngles(psm_measured_cp[:3,:3]))
+        # self.mr.move_cp(goal_r).wait() #align
+
+        # # turn gravity compensation on/off
+        # self.ml.use_gravity_compensation(True)
+        # self.ml.body.servo_cf(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]))
+
+        # psml_pose = self.psm2.get_current_position() #psm1 right, psm1 left
+        # print(f"left PSM pose RCM: {psml_pose}")
+        # psml_measured_cp = psml_pose.copy()
+        # print(f"PSM pose: {psml_measured_cp}")
+        # print(f"mtml orientation{self.ml.setpoint_cp().M}")
+        # goal_l = PyKDL.Frame()
+        # goal_l.p = self.ml.setpoint_cp().p
+        # # # goal.p[0] += 0.05
+        # goal_l.M= self.ml.setpoint_cp().M
+
+        # for i in range(3):
+        #     print(f"previous goal:{goal_l.M}")
+        #     for j in range(3):
+        #         goal_l.M[i,j]=psml_measured_cp[i][j]
+        #         # if j==1:
+        #         #     goal.M[i,j]*=-1
+        #         # goal.M[i,j]=psm_pose[i][j]
+        #     print(f"modified left goal:{goal_l.M}")
+        # print(goal_l.M.GetEulerZYX())
+        # # print(rotationMatrixToEulerAngles(psm_measured_cp[:3,:3]))
+        # self.ml.move_cp(goal_l).wait() #align
 
         # camera
         if self._render_mode == 'human':
@@ -201,8 +269,9 @@ class NeedleRings(PsmsEnv):
     def _reset_ecm_pos(self):
         self.ecm.reset_joint(self.QPOS_ECM)
 
+
 if __name__ == "__main__":
-    env = NeedleRings(render_mode='human')  # create one process and corresponding env
+    env = NeedleRingsFullDof(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

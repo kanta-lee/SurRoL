@@ -1,23 +1,29 @@
-# [SurRoL-v2](https://med-air.github.io/SurRoL/)
+# SurRoL: An Open-source Reinforcement Learning Centered and dVRK Compatible Platform for Surgical Robot Learning
+
+### [[Project Website]](https://med-air.github.io/SurRoL/)
 
 Under development...
 
 <p align="center">
-   <img src="resources/img/overview.png" width="95%" height="95%" alt="SurRoL"/>
+   <img src="docs/overview.png" width="95%" height="95%" alt="SurRoL"/>
 </p>
 
-- [Human-in-the-loop Embodied Intelligence with Interactive Simulation Environment for Surgical Robot Learning](https://arxiv.org/abs/2301.00452)
+
+- IEEE/RSJ IROS 2021 [SurRoL: An open-source reinforcement learning centered and dVRK compatible platform for surgical robot learning](https://arxiv.org/abs/2108.13035)
+- IEEE RA-L 2023 [Human-in-the-loop Embodied Intelligence with Interactive Simulation Environment for Surgical Robot Learning](https://arxiv.org/abs/2301.00452)
+
 
 ## Features
 
 - [dVRK](https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki) compatible [robots](./surrol/robots).
 - [Gym](https://github.com/openai/gym) style [API](./surrol/gym) for reinforcement learning.
-- 14 surgical-related [tasks](./surrol/tasks).
-- Various object [assets](./surrol/assets).
+- Fourteen surgical-related [tasks](./surrol/tasks).
+- Various object [assets](./surrol/assets) for simualtion.
 - Based on [PyBullet](https://github.com/bulletphysics/bullet3) for physics simulation.
 - Based on [Panda3D](https://www.panda3d.org/) for GUI and scene rendering.
-- Allow human interaction with [Touch Haptic Device](https://www.3dsystems.com/haptics-devices/touch).
-- Extenable designs which allows customization as needed.
+- Allow human interaction with [Touch Haptic Device](https://www.3dsystems.com/haptics-devices/touch) and real-world [dVRK](https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki) robots.
+- Full degree of freedom control and clutch support for real-world dVRK robots.
+- Extenable design which allows customization.
 
 ## Installation
 
@@ -49,7 +55,7 @@ Create a conda virtual environment and activate it:
 Install SurRoL in the created conda environment:
 
    ```shell
-   git clone --recursive -b SurRoL-v2 https://github.com/med-air/SurRoL.git
+   git clone https://github.com/med-air/SurRoL.git
    cd SurRoL
    pip install -e .
    ```
@@ -73,10 +79,10 @@ python test_multiple_scenes_keyboard.py
 ```
 Then you will see the following windows:
 <p align="center">
-   <img src="resources/img/GUI.png" width="95%" height="95%" alt="SurRoL"/>
+   <img src="docs/GUI.png" width="95%" height="95%" alt="SurRoL"/>
 </p>
 
-## Control with Touch Haptic Device
+## Control with Touch Haptic Device (limited DoF)
 
 ### 1. Install Driver and Dependencies for Touch Haptic Device
 
@@ -86,34 +92,57 @@ Then you will see the following windows:
 
      Run the "Touch_Setup" software provided by the OpenHaptic Device Driver. 
      <p align="left">
-      <img src="resources/img/SetupTouch.png" width="30%" height="30%" alt="SurRoL"/>
+      <img src="docs/SetupTouch.png" width="30%" height="30%" alt="SurRoL"/>
       </p>
      Set the right device name as "right" and set the left device name as "left".
 
 3. Install SWIG (>=4.0.2) -- https://www.swig.org/
 
-4. Compile the Python API of Touch Haptic Device for SurRoL-v2
+4. Compile the Python API of Touch Haptic Device for SurRoL
     ```shell
     bash setup_haptic.sh
     ```
 
-### 2. Start the SurRoL-v2 GUI with Touch
+### 2. Start the SurRoL GUI with Touch
 
-To start the SurRoL-v2 GUI with Touch (haptic device) support, run the following command:
+To start the SurRoL GUI with Touch (haptic device) support, run the following command:
 ```shell
 cd ./tests/
 python test_multiple_scenes_touch.py
 ```
+## Control with dVRK robots (full DoF)
 
-## Training RL Policy with Demonstrations
+### 1. Retrieve all the dVRK required source repositories and compile them.
+This project was developed on Ubuntu 20.04 with ROS Noetic with dVRK 2.1.
 
-Codes for RL policy learning are implemented in [rl](./rl), which are on top of [DEX](https://github.com/med-air/DEX/tree/main) (based on OpenAI baselines).
+Follow [this guide](https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki/CatkinBuild) to build and check all prerequisites listed [here](https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki/FirstSteps#documentation).
 
-- Train **DDPGBC** with demonstrations with following command:
-```bash
-python3 rl/train.py task=NeedlePick-v0 agent=ddpgbc use_wb=True demo_path=your_demo_path
+### 2. Start SurRoL GUI with dVRK software
+Start your dVRK robot and dVRK software, then start SurRoL GUI with:
 ```
-Note that you should specify the path of demonstration data you would like to provide to the RL agent, which could be collected by both human demonstrators or scripted controllers. For the latter, please refer to [here](../surrol/data/) for more details.
+cd ./tests/
+python3 test_multiple_scenes_dvrk_control.py
+```
+
+## Training RL Policy 
+
+Refer to [Policy Learning](rl/README.md).
+
+## Soft Tissue Simulation
+The soft body simulation is implemented using MPM (Material Point Method) algorithm with [Taichi](https://taichi.graphics). 
+```shell
+pip install -r MPM/requirements.txt
+```
+
+The main functionality of the simulation is encapsulated within two key functions: init_soft_body and sim_step. To fully understand and utilize these functions, it is recommended to refer to the detailed descriptions provided in the file surrol/tasks/psm_env.py. These descriptions will guide you on how to correctly pass the required parameters for each function.
+```shell
+env = NeedlePick(render_mode="human") #construct an environment at first
+env.init_soft_body() # Soft body initialization
+
+for i in range(100):
+   env.sim_step() #Soft body simulation
+```
+
 
 # Code Navigation
 
@@ -170,6 +199,13 @@ If you find the paper or the code helpful to your research, please cite the proj
   author={Long, Yonghao and Wei, Wang and Huang, Tao and Wang, Yuehao and Dou, Qi},
   journal={IEEE Robotics and Automation Letters (RAL)},
   year={2023}
+}
+
+@article{yang2024efficient,
+  title={Efficient Physically-based Simulation of Soft Bodies in Embodied Environment for Surgical Robot},
+  author={Yang, Zhenya and Long, Yonghao and Chen, Kai and Wei, Wang and Dou, Qi},
+  journal={arXiv preprint arXiv:2402.01181},
+  year={2024}
 }
 ```
 ## License

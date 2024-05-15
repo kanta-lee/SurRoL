@@ -17,9 +17,7 @@ class Scene:
         from .application import Application
         self.app = Application.app
         self.cam = Application.app.cam
-# DUAL ECM CAM START
         # self.cam2= Application.app.cam2
-# DUAL ECM CAM END
         self.taskMgr = Application.app.taskMgr
         self.loader = Application.app.loader
         self.render = Application.app.render
@@ -83,9 +81,7 @@ class GymEnvScene(Scene):
 
     def _initialize(self, **kwargs):
         super(GymEnvScene, self)._initialize(**kwargs)
-
         assert self.env is None
-
         if 'cid' in kwargs:
             self.env_params['cid'] = kwargs['cid']
         self.env = self.env_cls(**self.env_params)
@@ -174,19 +170,17 @@ class GymEnvScene(Scene):
                 self.flag=0
                 self.outview['pose']=scene_view.camera.pose_matrix
                 self.outview['yfov'],self.outview['znear'],self.outview['zfar'],self.outview['aspect']=np.rad2deg(yfov),znear,zfar,np.rad2deg(yfov*aspect)
-# DUAL ECM VIEW START
             static_track_ecm_view_out = np.array([[-0.8660253882408142, -0.25000008940696716, 0.4330127537250519, 0.0],
             [0.5000001192092896, -0.43301281332969666, 0.7499998211860657, 0.0],
             [4.4703490686970326e-08, 0.8660253286361694, 0.5000001192092896, 0.0],
             [0.33382686972618103, -0.49541640281677246, -2.541912794113159, 1.0]])
-            trans_mat = np.array([[1, 0, -0.,  0], [0., 1, -0.,0.01 ], [0., 0., 1,  0],[0, 0, 0, 1]])
+            trans_mat = np.array([[1, 0, -0.,  0], [0., 1, -0.,0.05 ], [0., 0., 1,  0],[0, 0, 0, 1]])
             result_mat = np.transpose(np.matmul(trans_mat,np.transpose(scene_view.camera.pose_matrix)))
             # self.cam2.set_mat(conv_mat * Mat4(*result_mat.ravel(),))
             # # self.cam2.set_mat(conv_mat * Mat4(*self.outview['pose'].ravel(),))
             # # print(f"{scene_view.camera.pose_matrix} {trans_mat} camera view matrix: {conv_mat * Mat4(*scene_view.camera.pose_matrix.ravel(),)}")
             # self.cam2.node().get_lens().set_near_far(self.outview['znear'],self.outview['zfar'])
             # self.cam2.node().get_lens().set_fov(self.outview['aspect'], self.outview['yfov'])
-# DUAL ECM VIEW END
     def _update_state(self, scene_state):
         """Apply scene state.
 

@@ -94,6 +94,13 @@ class Arm(object):
         pose_rcm = self.pose_world2rcm(pose_world, 'matrix')
         return pose_rcm
 
+    def get_current_position_world(self) -> np.ndarray:
+        """ Get the 'current cartesian position' of the arm (RCM frame).
+        Return 4*4 matrix. """
+        pose_world = forward_kinematics(self.body, eef_link=self.DoF - 1)
+        # pose_rcm = self.pose_world2rcm(pose_world, 'matrix')
+        return pose_world
+
     def get_current_joint_position(self) -> list:
         """ Get the 'current joint position' of the arm. """
         joint_positions = get_joint_positions(self.body, self.joints[:self.DoF])
@@ -135,32 +142,34 @@ class Arm(object):
             abs_pos[indices[i]] += delta_pos[i]
         return self.move_joint(abs_pos)
 
-    def move_joint(self, abs_input: [list, np.ndarray]) -> [bool, np.ndarray]:
+    def  move_joint(self, abs_input: [list, np.ndarray]) -> [bool, np.ndarray]:
         """
         Absolute move in joint space.
         Set desired joint positions without actual physical move (need pybullet to step).
         :param abs_input: the absolute translation you want to make (in joint space).
         :return: whether or not able to reach the given input.
         """
-        if not self._check_joint_limits(abs_input):
-            return False
+        # if not self._check_joint_limits(abs_input): #WWDEBUG for dvrk absolute control, I commented this limit check
+        #     return False
         self._position_joint_desired = np.copy(abs_input)
         joint_positions = self._get_joint_positions_all(abs_input)
-        if(self.DoF == 4):
-            p.setJointMotorControlArray(self.body,
+        # if(self.DoF == 4):
+        # print("in move joint")
+        p.setJointMotorControlArray(self.body,
                                         self.joints,
                                         p.POSITION_CONTROL,
                                         targetPositions=joint_positions,
                                         targetVelocities=[0.] * len(joint_positions))
-        elif(self.DoF == 6):
-            # p.setJointMotorControlArray(self.body,
-            #                             self.joints,
-            #                             p.POSITION_CONTROL,
-            #                             targetPositions=joint_positions,
-            #                             targetVelocities=[0.] * len(joint_positions),
-            #                             forces=[200.]*len(self.joints))
-            for(joint,value) in zip(self.joints,joint_positions):
-                control_joint(self.body,joint,value)
+        # print("called pybullet move joint")
+        # elif(self.DoF == 6):
+        #     # p.setJointMotorControlArray(self.body,
+        #     #                             self.joints,
+        #     #                             p.POSITION_CONTROL,
+        #     #                             targetPositions=joint_positions,
+        #     #                             targetVelocities=[0.] * len(joint_positions),
+        #     #                             forces=[200.]*len(self.joints))
+        #     for(joint,value) in zip(self.joints,joint_positions):
+        #         control_joint(self.body,joint,value)
         # print(self.DoF)
         # print(p.getDynamicsInfo(self.body,7))
         
@@ -257,8 +266,8 @@ class Arm(object):
         Helper function for PyBullet initial reset.
         Not recommend to use during simulation.
         """
-        if not self._check_joint_limits(abs_input):
-            return
+        # if not self._check_joint_limits(abs_input): #WWDEBUG for dvrk absolute control, I commented this limit check
+        #     return
         joint_positions = self._get_joint_positions_all(abs_input)
         set_joint_positions(self.body, self.joints, joint_positions)
         return self.move_joint(abs_input)
@@ -275,9 +284,9 @@ class Arm(object):
             endEffectorLinkIndex=link_index,
             targetPosition=pose_world[0],  # inertial pose, not joint pose
             targetOrientation=pose_world[1],
-            lowerLimits=self.limits['lower'][:self.DoF],
-            upperLimits=self.limits['upper'][:self.DoF],
-            jointRanges=self.limits['upper'][:self.DoF] - self.limits['lower'][:self.DoF],
+            # lowerLimits=self.limits['lower'][:self.DoF],
+            # upperLimits=self.limits['upper'][:self.DoF],
+            # jointRanges=self.limits['upper'][:self.DoF] - self.limits['lower'][:self.DoF],
             restPoses=[0] * self.DoF,
             residualThreshold=1e-9,  # can tune
             maxNumIterations=200

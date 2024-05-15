@@ -94,6 +94,8 @@ def goToGoal(env, last_obs):
 
     while time_step < min(env._max_episode_steps, args.steps):
         action = env.get_oracle_action(obs)
+        if isinstance(action, tuple):
+            action = action[0]
         if args.video:
             # img, mask = env.render('img_array')
             img = env.render('rgb_array')

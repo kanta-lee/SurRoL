@@ -21,11 +21,11 @@ task: NeedlePick-v0
 postfix: null
 dont_save: False
 n_eval_episodes: 20
-demo_path: null
+demo_path: /home/jwfu/SurRoL/surrol/data/demo/data_NeedlePick-v0_random_100.npz
 
-use_wb: True
-project_name: dex
-entity_name: thuang22
+use_wb: False
+project_name: surrol
+entity_name: fujiawei0724
 
 # MPI
 mpi: {rank: null, is_chef: null, num_workers: null}

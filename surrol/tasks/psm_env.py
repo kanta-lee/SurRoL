@@ -17,7 +17,10 @@ from surrol.const import ROOT_DIR_PATH, ASSET_DIR_PATH
 # only for demo
 import time
 import pandas as pd
-
+# soft body
+import MPM.mpm3d as mpm3d
+import matplotlib.pyplot as plt
+import trimesh
 
 def goal_distance(goal_a, goal_b):
     assert goal_a.shape == goal_b.shape
@@ -48,13 +51,19 @@ class PsmEnv(SurRoLGoalEnv):
 
     def __init__(self,
                  render_mode=None, cid = -1):
+        self.STEP_COUNT=0
+        self.particles_list = []
+        self.meshes_list = []
+        self.colormap = plt.get_cmap("YlGnBu")
+        self.rendering_cost = []
+        self.rigid_sim_cost = []
+        self.soft_sim_cost=[]
         # workspace
         workspace_limits = np.asarray(self.WORKSPACE_LIMITS1) \
                            + np.array([0., 0., 0.0102]).reshape((3, 1))  # tip-eef offset with collision margin
         workspace_limits *= self.SCALING  # use scaling for more stable collistion simulation
         self.workspace_limits1 = workspace_limits
-        # plot goal
-        self._goal_plot = True
+
         # has_object
         self.has_object = False
         self._waypoint_goal = False
@@ -63,7 +72,7 @@ class PsmEnv(SurRoLGoalEnv):
         # gripper
         self.block_gripper = True
         self._activated = -1
-        self._max_constraint_id = 1
+
         super(PsmEnv, self).__init__(render_mode, cid)
 
         # distance_threshold
@@ -95,7 +104,7 @@ class PsmEnv(SurRoLGoalEnv):
         # return - (d > self.distance_threshold).astype(np.float32)
         return self._is_success(achieved_goal, desired_goal).astype(np.float32) - 1.
 
-    def _env_setup(self,goal_plot=True):
+    def _env_setup(self):
         # camera
         if self._render_mode == 'human':
             reset_camera(yaw=90.0, pitch=-30.0, dist=0.82 * self.SCALING,
@@ -122,15 +131,10 @@ class PsmEnv(SurRoLGoalEnv):
                    globalScaling=self.SCALING)
 
         # for goal plotting
-        if goal_plot:
-            obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/sphere.urdf'),
-                                globalScaling=self.SCALING)
-            self.obj_ids['fixed'].append(obj_id)  # 0
-        else: 
-            obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/sphere.urdf'),
-                                globalScaling=0.000001) #visually remove
-            self.obj_ids['fixed'].append(obj_id)  # 0    
-        # print(f'goal:{obj_id}')
+        obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/sphere.urdf'),
+                            globalScaling=self.SCALING)
+        self.obj_ids['fixed'].append(obj_id)  # 0
+        print(f'goal:{obj_id}')
         pass  # need to implement based on every task
         # self.obj_ids
 
@@ -191,9 +195,6 @@ class PsmEnv(SurRoLGoalEnv):
         delta_position (3), delta_theta (1) and open/close the gripper (1)
         in the world frame
         """
-        # print(f'gripper contact info:{p.getContactPoints(bodyA=self.psm1.body, linkIndexA=6)}')
-        # if p.getNumConstraints():
-        #     print(f'num of constraints for set action: {p.getNumConstraints()}')
         assert len(action) == self.ACTION_SIZE, "The action should have the save dim with the ACTION_SIZE"
         # time0 = time.time()
         action = action.copy()  # ensure that we don't change the action outside of this scope
@@ -228,6 +229,7 @@ class PsmEnv(SurRoLGoalEnv):
         else:
             self.psm1.move_jaw(np.deg2rad(40))  # open jaw angle; can tune
             self._release(0)
+            # print(f'num of constraits for set action: {p.getNumConstraints()}')
 
         # time3 = time.time()
         # print("transform time: {:.4f}, IK time: {:.4f}, jaw time: {:.4f}, total time: {:.4f}"
@@ -244,19 +246,17 @@ class PsmEnv(SurRoLGoalEnv):
         d = goal_distance(achieved_goal, desired_goal)
         return (d < self.distance_threshold).astype(np.float32)
 
-    def _step_callback(self,demo=1):
+    def _step_callback(self):
         """ Remove the contact constraint if no contacts
         """
         if self.block_gripper or not self.has_object or self._activated < 0:
-            # print(f'skip{self.block_gripper} {self.has_object} {self._activated}')
+            # print(f'skip{self.block_gripper} {self.has_object} {self._activate}')
             return
-        # if demo:
         if self._contact_constraint is None:
             # the grippers activate; to check if they can grasp the object
             # TODO: check whether the constraint may cause side effects
             # pass
             psm = self.psm1 if self._activated == 0 else self.psm2
-            # print(self._meet_contact_constraint_requirement())
             if self._meet_contact_constraint_requirement():
                 # print(self.obj_id)
                 points_1 = p.getContactPoints(bodyA=psm.body, linkIndexA=6)
@@ -264,8 +264,7 @@ class PsmEnv(SurRoLGoalEnv):
                 points_1 = [point[2] for point in points_1 if point[2] in self.obj_ids['rigid']]
                 points_2 = [point[2] for point in points_2 if point[2] in self.obj_ids['rigid']]
                 contact_List = list(set(points_1)&set(points_2))
-                # print(f'contact{contact_List}')
-                # print(f'contact item id:{contact_List}')
+                # print(f'joint contact item:{contact_List}')
                 if len(contact_List)>0:
                     contact_Id=contact_List[-1]
                     body_pose = p.getLinkState(psm.body, psm.EEF_LINK_INDEX)
@@ -313,7 +312,7 @@ class PsmEnv(SurRoLGoalEnv):
                 # release the previously grasped object because there is no contact any more
                 # print("no contact!remove constraint!")
                 self._release(self._activated)
-        # print(f'num of constraints for stepcallback: {p.getNumConstraints()}')
+        # print(f'num of constraits for stepcallback: {p.getNumConstraints()}')
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -352,39 +351,32 @@ class PsmEnv(SurRoLGoalEnv):
                     p.setCollisionFilterPair(bodyUniqueIdA=psm.body, bodyUniqueIdB=self.obj_id,
                                              linkIndexA=7, linkIndexB=-1, enableCollision=0)
             else:
-                # activate if a physical contact happens between grippers and object items
+                # activate if a physical contact happens
                 points_1 = p.getContactPoints(bodyA=psm.body, linkIndexA=6)
                 points_2 = p.getContactPoints(bodyA=psm.body, linkIndexA=7)
                 points_1 = [point[2] for point in points_1 if point[2] in self.obj_ids['rigid']]
                 points_2 = [point[2] for point in points_2 if point[2] in self.obj_ids['rigid']]
                 intersect = list(set(points_1)&set(points_2))
-                # print(f'left gripper: {points_1}')
-                # print(f'right gripper: {points_2}')
+                # print(f'contacted? {len(intersect)}')
                 if len(intersect)>0:
                     self._activated = idx
 
-    def _release(self, idx: int,demo=1):
+    def _release(self, idx: int):
         # release the object
         if self.block_gripper:
             return
 
         if self._activated == idx:
             self._activated = -1
+
             if self._contact_constraint is not None:
                 try:
                     # print(f"no contact!to remove constraint id{self._contact_constraint}!")
                     for i in range(1,self._contact_constraint+1):
-                        p.changeConstraint(i, maxForce=0)
                         p.removeConstraint(i)
-                    if not p.getNumConstraints():
-                        self._contact_constraint = None
-                        # print(f"constraint status: {p.getConstraintInfo(i)}")
-                        # print(f"constraint state:{p.getConstraintState(i)}")
-                    # p.changeConstraint(self._contact_constraint, maxForce=0)
-                    # self._contact_constraint = None
-                    # print(f"#(constraint)?{p.getNumConstraints()}!")
-
-
+                    self._contact_constraint = None
+                    # print(f"removed?{self._contact_constraint}!")
+                    # print(f"contact constraint status: {self._contact_constraint}")
                     # enable collision
                     # psm = self.psm1 if idx == 0 else self.psm2
                     # p.setCollisionFilterPair(bodyUniqueIdA=psm.body, bodyUniqueIdB=self.obj_id,
@@ -392,7 +384,7 @@ class PsmEnv(SurRoLGoalEnv):
                     # p.setCollisionFilterPair(bodyUniqueIdA=psm.body, bodyUniqueIdB=self.obj_id,
                     #                          linkIndexA=7, linkIndexB=-1, enableCollision=1)
                 except:
-                    # print("unable to get constraint info since removed")
+                    # print("unable to remove constraint")
                     pass
 
     def _meet_contact_constraint_requirement(self) -> bool:
@@ -400,6 +392,260 @@ class PsmEnv(SurRoLGoalEnv):
         if self.block_gripper or self.has_object is None:
             return False
         return False
+    
+    # soft body related functions
+    def init_soft_body(
+        self,
+        collision_obj_list,
+        model_filename,
+        collision_sdf_filename,
+        soft_body_base_position,
+    ):
+        mpm3d.init(collision_obj_list, model_filename)
+        # load needle's sdf
+        mpm3d.init_pos()
+        mpm3d.init_sdf(np.load(collision_sdf_filename))
+        print("Soft Body Base Position:")
+        print(soft_body_base_position)
+        mpm3d.set_base_position(soft_body_base_position)
+    
+    def soft_body_step(
+        self,
+        i_rot_list,
+        i_pos_list,
+        USE_POINTS=True,
+        base_position=(0, 0, 0),
+        scale=1.0,
+        use_debug=False,
+        external_forces=False,
+        texture_id=-1,
+        add_collision_shape=False,
+        visualize_deformation=False,
+    ):
+        """
+        One simulation step of soft body.
+
+        i_rot: inverse rotation matrix
+
+        i_pos: inverse advection offset
+
+        USE_POINTS: draw points or meshes
+
+        base_position: the start position of the soft body
+
+        scale: scale soft body
+
+        use_debug: whether visualize euler grid and output inverse transform matrix
+        """
+        # print(f"Current Threshold:{self.threshold}")
+        
+        # grid_pos, FJ = mpm3d.step(
+        mpm3d.step(
+            scale,
+            inverse_pos_list=i_pos_list,
+            inverse_rot_list=i_rot_list,
+            apply_force=external_forces,
+            threshold=self.threshold,
+            visualize_deformation=visualize_deformation
+        )
+
+        t0 = time.time()
+        for i in self.particles_list:
+            p.removeUserDebugItem(i)
+        self.particles_list.clear()
+
+        for i in self.meshes_list:
+            p.removeBody(i)
+        self.meshes_list.clear()
+        t1=time.time()
+
+        if USE_POINTS:
+            particles_array = mpm3d.F_x.to_numpy()
+            num_particles = len(particles_array)
+            max_vertices = 12000  # the maximum vertices can be drawn on apple mac
+            idx = 0
+            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+            pld_id = p.addUserDebugPoints(
+                particles_array[:] * scale + base_position,
+                [mpm3d.ORIANGE] * num_particles,
+                pointSize=3,
+            )
+            self.particles_list.append(pld_id)
+            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+        else:
+            vtx, idx, _ = mpm3d.get_mesh(smooth_scale=0.2)
+            t3 = time.time()
+
+            if visualize_deformation:
+                vtx_deformation = np.zeros(shape=(len(vtx),))
+                # Interpolate vertex color from grid nodes
+                for i, v in enumerate(vtx):
+                    base = v.astype("int")
+                    dx, dy, dz = v - base
+                    vtx_deformation[i] = mpm3d.interpolate_deformation(base, dx, dy, dz)
+
+                # normalize
+                print(
+                    f"max deformation: {vtx_deformation.max()}, min deformation: {vtx_deformation.min()}"
+                )
+
+                vtx_deformation = (vtx_deformation - 300.0) / 3300.0
+                # #compute color
+                vtx_colors = self.colormap(1 - vtx_deformation)
+
+            vtx = vtx / (mpm3d.n_grid * 1.0)
+            vertices = vtx * scale + base_position
+            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
+
+            if visualize_deformation:
+                # bake texture and compute uv coordinates
+                reshape_idx = idx.reshape((-1, 3))
+                m = pymeshlab.Mesh(vtx, reshape_idx, v_color_matrix=vtx_colors)
+                ms = pymeshlab.MeshSet()
+                ms.add_mesh(m, f"level_set{self.STEP_COUNT}")
+                ms.compute_texcoord_by_function_per_wedge()
+                ms.compute_texmap_from_color(
+                    textname=f"./tex_tmp{self.STEP_COUNT}"
+                )  # file path?
+                ms.save_current_mesh("./visual/tmp.obj")
+                mesh = trimesh.load("./visual/tmp.obj", force="mesh")
+                # *****************************************
+
+            # oriange=[0.93,0.33,0.23]
+            if visualize_deformation:
+                vid = p.createVisualShape(
+                    shapeType=p.GEOM_MESH,
+                    vertices=vertices,
+                    indices=idx,
+                    uvs=mesh.visual.uv,
+                )
+            elif texture_id != -1:
+                # dynamic position based texture mapping
+                anchor = mpm3d.F_x[0].to_numpy()
+                UV=vtx[:, 1:] + vtx[:, :2] - (anchor[1:] + anchor[:2])
+                UV=vtx[:,:2]
+                
+                vid = p.createVisualShape(
+                    shapeType=p.GEOM_MESH,
+                    vertices=vertices,
+                    indices=idx,
+                    uvs=UV,
+                )
+            else:
+                vid = p.createVisualShape(
+                    shapeType=p.GEOM_MESH,
+                    vertices=vertices,
+                    indices=idx,
+                    rgbaColor=[0.93, 0.33, 0.23, 1.0],
+                )
+            
+            cid = -1
+            if add_collision_shape:
+                cid = p.createCollisionShape(
+                    shapeType=p.GEOM_MESH, vertices=vertices, indices=idx
+                )
+
+            body_id = p.createMultiBody(
+                baseVisualShapeIndex=vid, baseCollisionShapeIndex=cid
+            )
+
+            if visualize_deformation:
+                # texture mapping
+                defo_tex_id = p.loadTexture(
+                    f"./visual/tex_tmp{self.STEP_COUNT}.png"
+                )
+                self.STEP_COUNT += 1
+                p.changeVisualShape(
+                    objectUniqueId=body_id, linkIndex=-1, textureUniqueId=defo_tex_id
+                )
+            elif texture_id != -1:  #!: may lead to crash in v2
+                p.changeVisualShape(
+                    objectUniqueId=body_id, linkIndex=-1, textureUniqueId=texture_id
+                )
+            self.meshes_list.append(body_id)
+            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
+
+            t4 = time.time()
+            print(f"Rendering time: {(t4-t3)*1000}ms")
+            self.rendering_cost.append((t4-t3) * 1000)
+        return 0
+    
+    def sim_step(
+        self,
+        collision_obj_list,
+        soft_body_base_position,
+        use_points=False,
+        external_forces=False,
+        texture_id=-1,
+        add_collision_shape=False,
+        threshold=0.05,
+        scale=1.0,
+        visualize_deformation=False,
+        automate=False,
+    ):
+        inv_pos_list = []
+        inv_rot_list = []
+        tb=time.time()
+
+        assert len(collision_obj_list)==mpm3d.MAX_COLLISION_OBJECTS,f"Please edit MAX_COLLISION_OBJECTS in mpm3d.py to {len(collision_obj_list)}."
+
+        for co_obj in collision_obj_list:
+            if co_obj[1] == -1:  # object but no link
+                t_p, t_q = p.getBasePositionAndOrientation(co_obj[0])
+            else:
+                t_p, t_q = p.getLinkState(co_obj[0], co_obj[1])[:2]
+            s_p, s_q = soft_body_base_position, (0, 0, 0, 1.0)
+            inv_tp, inv_tq = p.invertTransform(t_p, t_q)
+            # pay attention to the multiply sequence
+            i_pos, i_quaternion = p.multiplyTransforms(inv_tp, inv_tq, s_p, s_q)
+            i_rot = (
+                np.array(p.getMatrixFromQuaternion(i_quaternion))
+                .reshape(3, 3)
+                .astype(np.float32)
+            )
+            i_pos = np.array(i_pos).astype(np.float32)
+
+            inv_pos_list.append(i_pos)
+            inv_rot_list.append(i_rot)
+        t0 = time.time()
+        # print(f'reverse transformation:{(t0-tb)*1000}')
+
+        # soft body simulation step
+        sum_J = self.soft_body_step(
+            i_rot_list=inv_rot_list,
+            i_pos_list=inv_pos_list,
+            USE_POINTS=use_points,
+            base_position=soft_body_base_position,
+            scale=scale,
+            use_debug=False,
+            external_forces=external_forces,
+            texture_id=texture_id,
+            add_collision_shape=add_collision_shape,
+            visualize_deformation=visualize_deformation,
+        )
+        t1 = time.time()
+        print(f"Whole Soft Simulation:{(t1-t0)*1000}ms")
+        self.soft_sim_cost.append((t1-t0)*1000)
+
+        # rigid body simulation step
+        num_step = int(mpm3d.timestep * 240)
+        for _ in range(num_step):
+            if automate:
+                action = self.get_oracle_action(self.obs)
+                self.obs, _, _, _ = self.step(action)
+                if action[4] == -0.5:
+                    # print("I am here")
+                    self.threshold = 0.03
+                else:
+                    self.threshold = 0.01
+            else:
+                p.stepSimulation()
+        t2 = time.time()
+        print(f"Whole Rigid Simulation:{(t2-t1)*1000}ms")
+        self.rigid_sim_cost.append((t2 - t1) * 1000)
+
+        return sum_J
+
 
     @property
     def action_size(self):

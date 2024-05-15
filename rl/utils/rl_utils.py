@@ -18,6 +18,19 @@ def get_env_params(env, cfg):
     )
     return env_params
 
+def get_env_params_viskill(env, cfg):
+    obs = env.reset()
+    env_params = AttrDict(
+        obs=obs['observation'].shape[0],
+        achieved_goal=obs['achieved_goal'].shape[0],
+        goal=obs['desired_goal'].shape[0],
+        act=env.action_space.shape[0],
+        act_rand_sampler=env.action_space.sample,
+        max_timesteps=env.max_episode_steps,
+        max_action=env.action_space.high[0],
+    )
+    return env_params
+
 
 class ReplayCache:
     def __init__(self, T):
@@ -74,6 +87,68 @@ def init_buffer(cfg, buffer, agent, normalize=True):
         buffer.store_episode(episode)
         if normalize:
             agent.update_normalizer(episode)
+
+def init_demo_buffer(cfg, buffer, agent, subtask=None, update_normalizer=True):
+    '''Load demonstrations into buffer and initilaize normalizer'''
+    demo_path = os.path.join(os.getcwd(),'SurRoL/surrol/data/demo')
+    file_name = "data_"
+    file_name += cfg.task
+    file_name += "_" + 'random'
+    if subtask is None:
+        file_name += "_" + str(cfg.num_demo) + '_primitive_new' + cfg.subtask
+    else:
+        file_name += "_" + str(cfg.num_demo) + '_primitive_new' + subtask
+    file_name += ".npz"
+
+    demo_path = os.path.join(demo_path, file_name)
+    demo = np.load(demo_path, allow_pickle=True)
+    demo_obs, demo_acs, demo_gt = demo['observations'], demo['actions'], demo['gt_actions']
+
+    episode_cache = ReplayCacheGT(buffer.T)
+    for epsd in range(cfg.num_demo):
+        episode_cache.store_obs(demo_obs[epsd][0])
+        for i in range(buffer.T):
+            episode_cache.store_transition(
+                obs=demo_obs[epsd][i+1],
+                action=demo_acs[epsd][i],
+                done=i==(buffer.T-1),
+                gt_goal=demo_gt[epsd][i]
+            )
+        episode = episode_cache.pop()
+        buffer.store_episode(episode)
+        if update_normalizer:
+            agent.update_normalizer(episode)
+
+
+def init_sc_buffer(cfg, buffer, agent, env_params):
+    '''Load demonstrations into buffer and initilaize normalizer'''
+    for subtask in env_params.subtasks:
+        demo_path = os.path.join(os.getcwd(),'SurRoL/surrol/data/demo')
+        file_name = "data_"
+        file_name += cfg.task
+        file_name += "_" + 'random'
+        file_name += "_" + str(cfg.num_demo) + '_primitive_new' + subtask
+        file_name += ".npz"
+
+        demo_path = os.path.join(demo_path, file_name)
+        demo = np.load(demo_path, allow_pickle=True)
+        demo_obs, demo_acs, demo_gt = demo['observations'], demo['actions'], demo['gt_actions']
+
+        for epsd in range(cfg.num_demo):
+            obs = demo_obs[epsd][0]['observation']
+            next_obs = demo_obs[epsd][-1]['observation']
+            action = demo_obs[epsd][0]['desired_goal'][:-env_params.len_cond]
+            # reward = sum([env_params.reward_funcs[subtask](demo_obs[epsd][i+1]['achieved_goal'], demo_obs[epsd][i+1]['desired_goal']) \
+            #         for i in range(len(demo_acs[epsd]))])
+            reward = env_params.reward_funcs[subtask](demo_obs[epsd][-1]['achieved_goal'], demo_obs[epsd][-1]['desired_goal'])
+            #print(subtask, epsd, reward)
+            done = subtask not in env_params.next_subtasks.keys()
+            reward = done * reward
+            gt_action = demo_gt[epsd][-1]
+            buffer[subtask].add(obs, action, reward, next_obs, done, gt_action)
+            if agent.sc_agent.normalize:
+                # TODO: hide normalized
+                agent.sc_agent.o_norm[subtask].update(obs) 
 
 
 class RolloutStorage:

@@ -124,7 +124,7 @@ class ActiveTrack(EcmEnv):
             print(" -> Out of view! {}".format(np.round(centroids, 4)))
 
         observation = np.concatenate([
-            robot_state, np.array(in_view).astype(np.float).ravel(),
+            robot_state, np.array(in_view).astype(np.float32).ravel(),
             centroids.ravel(), np.array(self.ecm.wz).ravel()  # achieved_goal.copy(),
         ])
         return observation

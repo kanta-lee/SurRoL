@@ -86,3 +86,11 @@ def _set_flat_params(network, params_shape, params):
         values.data.copy_(copy_params.data)
         # update the pointer
         pointer += len_param
+
+def mpi_gather_experience_successful_transitions(experience_transitions):
+    buf = MPI.COMM_WORLD.allgather(experience_transitions)
+    jointLL = []
+    for i in experience_transitions:
+        if i[0] is not None:
+            jointLL.append(i)
+    return jointLL
