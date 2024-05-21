@@ -28,7 +28,7 @@ from surrol.gui.application import Application, ApplicationConfig
 from surrol.tasks.needle_pick_RL import NeedlePickRL
 # from surrol.tasks.peg_board import PegBoard
 # from surrol.tasks.peg_board_bimanual import BiPegBoard
-from surrol.tasks.peg_transfer_RL import PegTransferRL
+from surrol.tasks.peg_transfer_RL_demo import PegTransferRL
 # from surrol.tasks.peg_transfer_RL import PegTransferRL
 # from surrol.tasks.needle_regrasp_bimanual import NeedleRegrasp
 # from surrol.tasks.peg_transfer_bimanual import BiPegTransfer

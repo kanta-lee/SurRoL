@@ -15,7 +15,7 @@ cd rl
 
 2. Create a virtual environment
 ```bash
-conda create -n surrol-rl python=3.8
+conda create -n surrol-rl python=3.7
 conda activate surrol-rl
 ```
 

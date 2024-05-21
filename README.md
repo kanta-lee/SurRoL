@@ -1,6 +1,4 @@
-# SurRoL: An Open-source Reinforcement Learning Centered and dVRK Compatible Platform for Surgical Robot Learning
-
-### [[Project Website]](https://med-air.github.io/SurRoL/)
+# [SurRoL](https://med-air.github.io/SurRoL/)
 
 Under development...
 
@@ -8,22 +6,19 @@ Under development...
    <img src="docs/overview.png" width="95%" height="95%" alt="SurRoL"/>
 </p>
 
-
-- IEEE/RSJ IROS 2021 [SurRoL: An open-source reinforcement learning centered and dVRK compatible platform for surgical robot learning](https://arxiv.org/abs/2108.13035)
-- IEEE RA-L 2023 [Human-in-the-loop Embodied Intelligence with Interactive Simulation Environment for Surgical Robot Learning](https://arxiv.org/abs/2301.00452)
-
+- [Human-in-the-loop Embodied Intelligence with Interactive Simulation Environment for Surgical Robot Learning](https://arxiv.org/abs/2301.00452)
 
 ## Features
 
 - [dVRK](https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki) compatible [robots](./surrol/robots).
 - [Gym](https://github.com/openai/gym) style [API](./surrol/gym) for reinforcement learning.
-- Fourteen surgical-related [tasks](./surrol/tasks).
-- Various object [assets](./surrol/assets) for simualtion.
+- Full degree of freedom control and clutch support for real-world dVRK robots.
+- 14 surgical-related [tasks](./surrol/tasks).
+- Various object [assets](./surrol/assets).
 - Based on [PyBullet](https://github.com/bulletphysics/bullet3) for physics simulation.
 - Based on [Panda3D](https://www.panda3d.org/) for GUI and scene rendering.
 - Allow human interaction with [Touch Haptic Device](https://www.3dsystems.com/haptics-devices/touch) and real-world [dVRK](https://github.com/jhu-dvrk/sawIntuitiveResearchKit/wiki) robots.
-- Full degree of freedom control and clutch support for real-world dVRK robots.
-- Extenable design which allows customization.
+- Extenable designs which allows customization as needed.
 
 ## Installation
 
@@ -82,7 +77,7 @@ Then you will see the following windows:
    <img src="docs/GUI.png" width="95%" height="95%" alt="SurRoL"/>
 </p>
 
-## Control with Touch Haptic Device (limited DoF)
+## Control with Touch Haptic Device(limited DoF)
 
 ### 1. Install Driver and Dependencies for Touch Haptic Device
 
@@ -110,7 +105,7 @@ To start the SurRoL GUI with Touch (haptic device) support, run the following co
 cd ./tests/
 python test_multiple_scenes_touch.py
 ```
-## Control with dVRK robots (full DoF)
+## Control with dVRK robots(full DoF)
 
 ### 1. Retrieve all the dVRK required source repositories and compile them.
 This project was developed on Ubuntu 20.04 with ROS Noetic with dVRK 2.1.
@@ -132,6 +127,7 @@ Refer to [Policy Learning](rl/README.md).
 The soft body simulation is implemented using MPM (Material Point Method) algorithm with [Taichi](https://taichi.graphics). 
 ```shell
 pip install -r MPM/requirements.txt
+
 ```
 
 The main functionality of the simulation is encapsulated within two key functions: init_soft_body and sim_step. To fully understand and utilize these functions, it is recommended to refer to the detailed descriptions provided in the file surrol/tasks/psm_env.py. These descriptions will guide you on how to correctly pass the required parameters for each function.
@@ -141,6 +137,7 @@ env.init_soft_body() # Soft body initialization
 
 for i in range(100):
    env.sim_step() #Soft body simulation
+
 ```
 
 
@@ -199,13 +196,6 @@ If you find the paper or the code helpful to your research, please cite the proj
   author={Long, Yonghao and Wei, Wang and Huang, Tao and Wang, Yuehao and Dou, Qi},
   journal={IEEE Robotics and Automation Letters (RAL)},
   year={2023}
-}
-
-@article{yang2024efficient,
-  title={Efficient Physically-based Simulation of Soft Bodies in Embodied Environment for Surgical Robot},
-  author={Yang, Zhenya and Long, Yonghao and Chen, Kai and Wei, Wang and Dou, Qi},
-  journal={arXiv preprint arXiv:2402.01181},
-  year={2024}
 }
 ```
 ## License
