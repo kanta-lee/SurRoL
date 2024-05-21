@@ -50,7 +50,7 @@ Create a conda virtual environment and activate it:
 Install SurRoL in the created conda environment:
 
    ```shell
-   git clone https://github.com/med-air/SurRoL.git
+   git clone --recursive -b Dev https://github.com/med-air/SurRoL.git
    cd SurRoL
    pip install -e .
    ```
