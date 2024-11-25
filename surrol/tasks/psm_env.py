@@ -129,7 +129,7 @@ class PsmEnv(SurRoLGoalEnv):
         self.obj_ids['fixed'].append(obj_id)  # 0
 
         # For obstacle plotting
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/sphere_obstacle.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['fixed'].append(obstacle_id)  # 1
 
