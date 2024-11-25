@@ -13,7 +13,8 @@ from surrol.const import ASSET_DIR_PATH
 
 class NeedlePick(PsmEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
-    WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.685, 0.745))  # reduce tip pad contact
+    WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05),
+                        (0.685, 0.745))  # reduce tip pad contact
     SCALING = 5.
 
     # TODO: grasp is sometimes not stable; check how to fix it
@@ -30,7 +31,8 @@ class NeedlePick(PsmEnv):
                workspace_limits[1][1],
                (workspace_limits[2][1] + workspace_limits[2][0]) / 2)
         orn = (0.5, 0.5, -0.5, -0.5)
-        joint_positions = self.psm1.inverse_kinematics((pos, orn), self.psm1.EEF_LINK_INDEX)
+        joint_positions = self.psm1.inverse_kinematics(
+            (pos, orn), self.psm1.EEF_LINK_INDEX)
         self.psm1.reset_joint(joint_positions)
         self.block_gripper = False
         # physical interaction
@@ -47,7 +49,8 @@ class NeedlePick(PsmEnv):
         yaw = (np.random.rand() - 0.5) * np.pi
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
                             (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,  # TODO: scaling
-                             workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
+                             workspace_limits[1].mean() + \
+                             (np.random.rand() - 0.5) * 0.1,
                              workspace_limits[2][0] + 0.01),
                             p.getQuaternionFromEuler((0, 0, yaw)),
                             useFixedBase=False,
@@ -61,7 +64,8 @@ class NeedlePick(PsmEnv):
         """
         workspace_limits = self.workspace_limits1
         goal = np.array([workspace_limits[0].mean() + 0.01 * np.random.randn() * self.SCALING,
-                         workspace_limits[1].mean() + 0.01 * np.random.randn() * self.SCALING,
+                         workspace_limits[1].mean() + 0.01 *
+                         np.random.randn() * self.SCALING,
                          workspace_limits[2][1] - 0.04 * self.SCALING])
         return goal.copy()
 
@@ -69,6 +73,10 @@ class NeedlePick(PsmEnv):
         """ Define waypoints
         """
         super()._sample_goal_callback()
+        # Plot the obstacle on the video
+        # The obstacle is place at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['fixed'][1], np.array([2.66255212, -0.00543937, 3.49126458]), (0, 0, 0, 1))
         self._waypoints = [None, None, None, None]  # four waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
         self._waypoint_z_init = pos_obj[2]
@@ -117,13 +125,15 @@ class NeedlePick(PsmEnv):
         for i, waypoint in enumerate(self._waypoints):
             if waypoint is None:
                 continue
-            delta_pos = (waypoint[:3] - obs['observation'][:3]) / 0.01 / self.SCALING
+            delta_pos = (waypoint[:3] - obs['observation']
+                         [:3]) / 0.01 / self.SCALING
             delta_yaw = (waypoint[3] - obs['observation'][5]).clip(-0.4, 0.4)
             if np.abs(delta_pos).max() > 1:
                 delta_pos /= np.abs(delta_pos).max()
             scale_factor = 0.4
             delta_pos *= scale_factor
-            action = np.array([delta_pos[0], delta_pos[1], delta_pos[2], delta_yaw, waypoint[4]])
+            action = np.array([delta_pos[0], delta_pos[1],
+                              delta_pos[2], delta_yaw, waypoint[4]])
             if np.linalg.norm(delta_pos) * 0.01 / scale_factor < 1e-4 and np.abs(delta_yaw) < 1e-2:
                 self._waypoints[i] = None
             break
@@ -132,7 +142,8 @@ class NeedlePick(PsmEnv):
 
 
 if __name__ == "__main__":
-    env = NeedlePick(render_mode='human')  # create one process and corresponding env
+    # create one process and corresponding env
+    env = NeedlePick(render_mode='human')
 
     env.test()
     env.close()
