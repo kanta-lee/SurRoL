@@ -11,7 +11,8 @@ import numpy as np
 import imageio
 from surrol.const import ROOT_DIR_PATH
 
-parser = argparse.ArgumentParser(description='generate demonstrations for imitation')
+parser = argparse.ArgumentParser(
+    description='generate demonstrations for imitation')
 parser.add_argument('--env', type=str, required=True,
                     help='the environment to generate demonstrations')
 parser.add_argument('--video', action='store_true',
@@ -29,7 +30,7 @@ masks = []
 
 
 def main():
-    env = gym.make(args.env, render_mode='human')  # 'human'
+    env = gym.make(args.env, render_mode='rgb_array')  # 'human'
     num_itr = 100 if not args.video else 1
     cnt = 0
     init_state_space = 'random'
@@ -75,7 +76,8 @@ def main():
 
     used_time = time.time() - init_time
     print("Saved data at:", folder)
-    print("Time used: {:.1f}m, {:.1f}s\n".format(used_time // 60, used_time % 60))
+    print("Time used: {:.1f}m, {:.1f}s\n".format(
+        used_time // 60, used_time % 60))
     print(f"Trials: {num_itr}/{cnt}")
     env.close()
 
@@ -110,7 +112,8 @@ def goToGoal(env, last_obs):
         episode_acs.append(action)
         episode_info.append(info)
         episode_obs.append(obs)
-    print("Episode time used: {:.2f}s\n".format(time.time() - episode_init_time))
+    print("Episode time used: {:.2f}s\n".format(
+        time.time() - episode_init_time))
 
     if success:
         actions.append(episode_acs)
