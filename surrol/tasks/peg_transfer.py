@@ -37,7 +37,7 @@ class PegTransfer(PsmEnv):
                             np.array(self.POSE_BOARD[0]) * self.SCALING,
                             p.getQuaternionFromEuler(self.POSE_BOARD[1]),
                             globalScaling=self.SCALING)
-        self.obj_ids['fixed'].append(obj_id)  # 2
+        self.obj_ids['fixed'].append(obj_id)  # 1
         self._pegs = np.arange(12)
         np.random.shuffle(self._pegs[:6])
         np.random.shuffle(self._pegs[6: 12])
@@ -46,7 +46,7 @@ class PegTransfer(PsmEnv):
         num_blocks = 4
         # for i in range(6, 6 + num_blocks):
         for i in self._pegs[6: 6 + num_blocks]:
-            pos, orn = get_link_pose(self.obj_ids['fixed'][2], i)
+            pos, orn = get_link_pose(self.obj_ids['fixed'][1], i)
             yaw = (np.random.rand() - 0.5) * np.deg2rad(60)
             obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'block/block.urdf'),
                                 np.array(pos) + np.array([0, 0, 0.03]),
@@ -73,7 +73,7 @@ class PegTransfer(PsmEnv):
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
         """
-        goal = np.array(get_link_pose(self.obj_ids['fixed'][2], self._pegs[0])[0])
+        goal = np.array(get_link_pose(self.obj_ids['fixed'][1], self._pegs[0])[0])
         return goal.copy()
 
     def _sample_goal_callback(self):
@@ -98,7 +98,7 @@ class PegTransfer(PsmEnv):
                                        pos_obj[2] + 0.045 * self.SCALING, yaw, -0.5])  # lift up
 
         # pos_peg = get_link_pose(self.obj_ids['fixed'][1], self.obj_id - np.min(self._blocks) + 6)[0]  # 6 pegs
-        pos_peg = get_link_pose(self.obj_ids['fixed'][2],
+        pos_peg = get_link_pose(self.obj_ids['fixed'][1],
                                 self._pegs[self.obj_id - np.min(self._blocks) + 6])[0]  # 6 pegs
         pos_place = [self.goal[0] + pos_obj[0] - pos_peg[0],
                      self.goal[1] + pos_obj[1] - pos_peg[1], self._waypoints[0][2]]  # consider offset

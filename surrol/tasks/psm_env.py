@@ -95,7 +95,8 @@ class PsmEnv(SurRoLGoalEnv):
 
     def _env_setup(self):
         # for venv
-        self.obj_ids = {'fixed': [], 'rigid': [], 'deformable': []}
+        self.obj_ids = {'fixed': [], 'rigid': [],
+                        'deformable': [], 'obstacle': []}
 
         # camera
         if self._render_mode == 'human':
@@ -131,7 +132,7 @@ class PsmEnv(SurRoLGoalEnv):
         # For obstacle plotting
         obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
                                  globalScaling=self.SCALING)
-        self.obj_ids['fixed'].append(obstacle_id)  # 1
+        self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
         pass  # need to implement based on every task
         # self.obj_ids
@@ -305,6 +306,13 @@ class PsmEnv(SurRoLGoalEnv):
         """
         p.resetBasePositionAndOrientation(
             self.obj_ids['fixed'][0], self.goal, (0, 0, 0, 1))
+
+        # Plot the obstacle on the video
+        # Currently, obstacle is a green sphere.
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][0],
+            np.array(get_link_pose(self._env.obj_ids['obstacle'][0], -1)[0]),
+            (0, 0, 0, 1))
 
     def _activate(self, idx: int):
         """
