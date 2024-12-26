@@ -73,7 +73,7 @@ class PegTransfer(PsmEnv):
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
         """
-        goal = np.array(get_link_pose(self.obj_ids['fixed'][1], self._pegs[0])[0])
+        goal = np.array(get_link_pose(self.obj_ids['fixed'][2], self._pegs[0])[0])
         return goal.copy()
 
     def _sample_goal_callback(self):
@@ -98,7 +98,7 @@ class PegTransfer(PsmEnv):
                                        pos_obj[2] + 0.045 * self.SCALING, yaw, -0.5])  # lift up
 
         # pos_peg = get_link_pose(self.obj_ids['fixed'][1], self.obj_id - np.min(self._blocks) + 6)[0]  # 6 pegs
-        pos_peg = get_link_pose(self.obj_ids['fixed'][1],
+        pos_peg = get_link_pose(self.obj_ids['fixed'][2],
                                 self._pegs[self.obj_id - np.min(self._blocks) + 6])[0]  # 6 pegs
         pos_place = [self.goal[0] + pos_obj[0] - pos_peg[0],
                      self.goal[1] + pos_obj[1] - pos_peg[1], self._waypoints[0][2]]  # consider offset
