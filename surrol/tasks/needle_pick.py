@@ -64,10 +64,6 @@ class NeedlePick(PsmEnv):
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
         
-        # Plot the obstacle on the video
-        # The obstacle is place at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.66255212, -0.00543937, 3.49126458]), (0, 0, 0, 1))
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -83,6 +79,10 @@ class NeedlePick(PsmEnv):
         """ Define waypoints
         """
         super()._sample_goal_callback()
+        # Plot the obstacle on the video
+        # The obstacle is place at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][0], np.array([2.66255212, -0.00543937, 3.49126458]), (0, 0, 0, 1))
         self._waypoints = [None, None, None, None]  # four waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
         self._waypoint_z_init = pos_obj[2]
