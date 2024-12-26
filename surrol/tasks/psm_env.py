@@ -311,7 +311,7 @@ class PsmEnv(SurRoLGoalEnv):
         # Currently, obstacle is a green sphere.
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array(get_link_pose(self._env.obj_ids['obstacle'][0], -1)[0]),
+            np.array(get_link_pose(self.obj_ids['obstacle'][0], -1)[0]),
             (0, 0, 0, 1))
 
     def _activate(self, idx: int):
