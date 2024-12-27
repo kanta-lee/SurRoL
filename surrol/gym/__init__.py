@@ -7,6 +7,11 @@ register(
     entry_point='surrol.tasks.needle_reach:NeedleReach',
     max_episode_steps=50,
 )
+register(
+    id='NeedleReach-v1',
+    entry_point='surrol.tasks.needle_reach_sphere_obstacle:NeedleReach',
+    max_episode_steps=100,
+)
 
 register(
     id='GauzeRetrieve-v0',
@@ -27,6 +32,11 @@ register(
 register(
     id='NeedlePick-v2',
     entry_point='surrol.tasks.needle_pick_surface_obstacle:NeedlePick',
+    max_episode_steps=100,
+)
+register(
+    id='NeedlePick-v3',
+    entry_point='surrol.tasks.needle_pick_within_box:NeedlePick',
     max_episode_steps=100,
 )
 
