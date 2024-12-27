@@ -58,6 +58,12 @@ class NeedlePick(PsmEnv):
         p.changeVisualShape(obj_id, -1, specularColor=(80, 80, 80))
         self.obj_ids['rigid'].append(obj_id)  # 0
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
+        
+        # For obstacle plotting
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
+                                 globalScaling=self.SCALING)
+        self.obj_ids['obstacle'].append(obstacle_id)  # 0
+        
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -73,6 +79,9 @@ class NeedlePick(PsmEnv):
         """ Define waypoints
         """
         super()._sample_goal_callback()
+        # The obstacle is placed at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][0], np.array([2.66255212, -0.00543937, 3.49126458]), (0, 0, 0, 1))
         self._waypoints = [None, None, None, None]  # four waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
         self._waypoint_z_init = pos_obj[2]
