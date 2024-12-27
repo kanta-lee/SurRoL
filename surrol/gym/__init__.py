@@ -12,6 +12,11 @@ register(
     entry_point='surrol.tasks.needle_reach_sphere_obstacle:NeedleReach',
     max_episode_steps=100,
 )
+register(
+    id='NeedleReach-v2',
+    entry_point='surrol.tasks.needle_reach_surface_obstacle:NeedleReach',
+    max_episode_steps=100,
+)
 
 register(
     id='GauzeRetrieve-v0',
