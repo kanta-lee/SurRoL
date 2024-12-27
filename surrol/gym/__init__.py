@@ -23,6 +23,16 @@ register(
     entry_point='surrol.tasks.gauze_retrieve:GauzeRetrieve',
     max_episode_steps=50,
 )
+register(
+    id='GauzeRetrieve-v1',
+    entry_point='surrol.tasks.gauze_retrieve_sphere_obstacle:GauzeRetrieve',
+    max_episode_steps=100,
+)
+register(
+    id='GauzeRetrieve-v2',
+    entry_point='surrol.tasks.gauze_retrieve_surface_obstacle:GauzeRetrieve',
+    max_episode_steps=100,
+)
 
 register(
     id='NeedlePick-v0',
@@ -49,6 +59,16 @@ register(
     id='PegTransfer-v0',
     entry_point='surrol.tasks.peg_transfer:PegTransfer',
     max_episode_steps=50,
+)
+register(
+    id='PegTransfer-v1',
+    entry_point='surrol.tasks.peg_transfer_sphere_obstacle:PegTransfer',
+    max_episode_steps=100,
+)
+register(
+    id='PegTransfer-v2',
+    entry_point='surrol.tasks.peg_transfer_surface_obstacle:PegTransfer',
+    max_episode_steps=100,
 )
 
 # Bimanual PSM Env
