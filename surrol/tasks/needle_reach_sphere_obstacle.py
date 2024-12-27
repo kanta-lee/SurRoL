@@ -69,9 +69,9 @@ class NeedleReach(PsmEnv):
         pos, orn = get_link_pose(self.obj_id, self.obj_link1)
         goal = np.array([pos[0], pos[1], pos[2] + 0.005 * self.SCALING])
 
-        # The obstacle is placed at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
+        # Plot sphere obstacle at xyz position of [2.54761839, 0.19000717, 3.68663025]
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.66255212, -0.00543937, 3.49126458]), (0, 0, 0, 1))
+            self.obj_ids['obstacle'][0], np.array([2.54761839, 0.19000717, 3.68663025]), (0, 0, 0, 1))
         return goal.copy()
 
     def get_oracle_action(self, obs) -> np.ndarray:
