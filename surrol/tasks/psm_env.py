@@ -67,6 +67,7 @@ class PsmEnv(SurRoLGoalEnv):
         self.distance_threshold = self.DISTANCE_THRESHOLD * self.SCALING
 
         # render related setting
+        # front
         self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(-0.05 * self.SCALING,
                                   0, 0.375 * self.SCALING),
@@ -76,6 +77,37 @@ class PsmEnv(SurRoLGoalEnv):
             roll=0,
             upAxisIndex=2
         )
+        # left
+        # self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
+        #     cameraTargetPosition=(0.55 * self.SCALING,
+        #                           0.52 * self.SCALING, 0.375 * self.SCALING),
+        #     distance=0.81 * self.SCALING,
+        #     yaw=0,
+        #     pitch=-30,
+        #     roll=0,
+        #     upAxisIndex=2
+        # )
+        # right
+        # self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
+        #     cameraTargetPosition=(0.55 * self.SCALING,
+        #                           -0.52 * self.SCALING, 0.375 * self.SCALING),
+        #     distance=0.81 * self.SCALING,
+        #     yaw=180,
+        #     pitch=-30,
+        #     roll=0,
+        #     upAxisIndex=2
+        # )
+        # up
+        # self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
+        #     cameraTargetPosition=(0.55 * self.SCALING,
+        #                           0, 0.05 * self.SCALING),
+        #     distance=0.81 * self.SCALING,
+        #     yaw=90,
+        #     pitch=-90,
+        #     roll=0,
+        #     upAxisIndex=2
+        # )
+
         # self._view_matrix = p.computeViewMatrixFromYawPitchRoll(
         #     cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.345 * self.SCALING),
         #     distance=0.77 * self.SCALING,
