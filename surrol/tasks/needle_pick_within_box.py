@@ -64,6 +64,11 @@ class NeedlePick(PsmEnv):
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
+        boundaries = p.getAABB(self.obj_ids['obstacle'][0])
+        lwh = np.array(boundaries[1]) - np.array(boundaries[0])
+        self.obj_size = {'obstacle': []}
+        self.obj_size['obstacle'].append(lwh)
+
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
         """
