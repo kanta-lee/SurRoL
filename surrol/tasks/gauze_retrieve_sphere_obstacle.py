@@ -87,7 +87,7 @@ class GauzeRetrieve(PsmEnv):
         # Reset obstacle position (constant so far)
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([2.74666381e+00, -5.78937773e-03,  3.45127225e+00]),
+            np.array([2.61487699e+00,  1.30861089e-01,  3.54097056e+00]),
             (0, 0, 0, 1))
 
         self._waypoints = [None, None, None, None, None]  # five waypoints

@@ -71,7 +71,7 @@ class NeedleReach(PsmEnv):
 
         # Plot sphere obstacle at xyz position of [2.54761839, 0.19000717, 3.68663025]
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.54761839, 0.19000717, 3.68663025]), (0, 0, 0, 1))
+            self.obj_ids['obstacle'][0], np.array([2.65176821, 0.06056048, 3.55256867]), (0, 0, 0, 1))
         return goal.copy()
 
     def get_oracle_action(self, obs) -> np.ndarray:
