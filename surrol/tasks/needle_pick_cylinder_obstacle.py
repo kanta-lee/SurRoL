@@ -60,7 +60,7 @@ class NeedlePick(PsmEnv):
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
         
         # For obstacle plotting
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/half_sphere.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'cylinder/cylinder_phase_1.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
@@ -80,7 +80,7 @@ class NeedlePick(PsmEnv):
         super()._sample_goal_callback()
         # The obstacle is placed at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.75, -0.00543937, 3.48]), (-0.70710678, 0., 0., 0.70710678))
+            self.obj_ids['obstacle'][0], np.array([2.58, 0.17, 3.524]), (-0.33255868, -0.33255868, 0., 0.88250182))
         self._waypoints = [None, None, None, None]  # four waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
         self._waypoint_z_init = pos_obj[2]
