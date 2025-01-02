@@ -12,6 +12,13 @@ from surrol.utils.robotics import (
     get_euler_from_matrix,
     get_matrix_from_euler
 )
+from surrol.utils.pybullet_utils import (
+    render_image,
+)
+from surrol.gym.surrol_env import (
+    RENDER_HEIGHT,
+    RENDER_WIDTH
+)
 from surrol.const import ROOT_DIR_PATH, ASSET_DIR_PATH
 
 # only for demo
@@ -120,6 +127,53 @@ class PsmEnv(SurRoLGoalEnv):
         #     roll=0,
         #     upAxisIndex=2
         # )
+
+    def render_three_views(self, mode='rgb_array'):
+        self._render_callback(mode)
+        if mode == "human":
+            return np.array([])
+        # front
+        _view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=(-0.05 * self.SCALING,
+                                  0, 0.375 * self.SCALING),
+            distance=0.81 * self.SCALING,
+            yaw=90,
+            pitch=-30,
+            roll=0,
+            upAxisIndex=2
+        )
+        front_rgb_array, _ = render_image(RENDER_WIDTH, RENDER_HEIGHT,
+                                       _view_matrix, self._proj_matrix)
+
+        # right
+        _view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=(0.55 * self.SCALING,
+                                  -0.52 * self.SCALING, 0.375 * self.SCALING),
+            distance=0.81 * self.SCALING,
+            yaw=180,
+            pitch=-30,
+            roll=0,
+            upAxisIndex=2
+        )
+        right_rgb_array, _ = render_image(RENDER_WIDTH, RENDER_HEIGHT,
+                                       _view_matrix, self._proj_matrix)
+
+        # top
+        _view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=(0.55 * self.SCALING,
+                                  0, 0.05 * self.SCALING),
+            distance=0.81 * self.SCALING,
+            yaw=90,
+            pitch=-90,
+            roll=0,
+            upAxisIndex=2
+        )
+        top_rgb_array, _ = render_image(RENDER_WIDTH, RENDER_HEIGHT,
+                                       _view_matrix, self._proj_matrix)
+        if mode == 'rgb_array':
+            return [front_rgb_array, right_rgb_array, top_rgb_array]
+        else:
+            raise ValueError('Masks are not saved')
 
     def compute_reward(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, info):
         """ All sparse reward.
