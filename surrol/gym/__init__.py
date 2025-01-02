@@ -59,6 +59,11 @@ register(
     entry_point='surrol.tasks.needle_pick_half_sphere_obstacle:NeedlePick',
     max_episode_steps=100,
 )
+register(
+    id='NeedlePick-v5',
+    entry_point='surrol.tasks.needle_pick_cylinder_obstacle:NeedlePick',
+    max_episode_steps=100,
+)
 
 register(
     id='PegTransfer-v0',
