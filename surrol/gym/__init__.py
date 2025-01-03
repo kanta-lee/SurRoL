@@ -17,6 +17,11 @@ register(
     entry_point='surrol.tasks.needle_reach_surface_obstacle:NeedleReach',
     max_episode_steps=100,
 )
+register(
+    id='NeedleReach-v4',
+    entry_point='surrol.tasks.needle_reach_half_sphere_obstacle:NeedleReach',
+    max_episode_steps=100,
+)
 
 register(
     id='GauzeRetrieve-v0',
@@ -31,6 +36,11 @@ register(
 register(
     id='GauzeRetrieve-v2',
     entry_point='surrol.tasks.gauze_retrieve_surface_obstacle:GauzeRetrieve',
+    max_episode_steps=100,
+)
+register(
+    id='GauzeRetrieve-v4',
+    entry_point='surrol.tasks.gauze_retrieve_half_sphere_obstacle:GauzeRetrieve',
     max_episode_steps=100,
 )
 
@@ -78,6 +88,11 @@ register(
 register(
     id='PegTransfer-v2',
     entry_point='surrol.tasks.peg_transfer_surface_obstacle:PegTransfer',
+    max_episode_steps=100,
+)
+register(
+    id='PegTransfer-v4',
+    entry_point='surrol.tasks.peg_transfer_half_sphere_obstacle:PegTransfer',
     max_episode_steps=100,
 )
 
