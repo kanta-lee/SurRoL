@@ -55,7 +55,7 @@ class NeedleReach(PsmEnv):
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
 
         # For obstacle plotting
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/half_sphere.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
@@ -69,9 +69,11 @@ class NeedleReach(PsmEnv):
         pos, orn = get_link_pose(self.obj_id, self.obj_link1)
         goal = np.array([pos[0], pos[1], pos[2] + 0.005 * self.SCALING])
 
-        # Plot sphere obstacle at xyz position of [2.54761839, 0.19000717, 3.68663025]
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.65176821, 0.06056048, 3.55256867]), (0, 0, 0, 1))
+            self.obj_ids['obstacle'][0], 
+            np.array([2.75, -0.00543937, 3.48]), 
+            (-0.70710678, 0., 0., 0.70710678))
+        
         return goal.copy()
 
     def get_oracle_action(self, obs) -> np.ndarray:

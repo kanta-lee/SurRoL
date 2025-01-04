@@ -61,7 +61,7 @@ class GauzeRetrieve(PsmEnv):
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], -1
 
         # For obstacle plotting
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/half_sphere.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
@@ -84,11 +84,10 @@ class GauzeRetrieve(PsmEnv):
         """
         super()._sample_goal_callback()
 
-        # Reset obstacle position (constant so far)
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0],
-            np.array([2.61487699e+00,  1.30861089e-01,  3.54097056e+00]),
-            (0, 0, 0, 1))
+            self.obj_ids['obstacle'][0], 
+            np.array([2.75, -0.00543937, 3.48]), 
+            (-0.70710678, 0., 0., 0.70710678))
 
         self._waypoints = [None, None, None, None, None]  # five waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
