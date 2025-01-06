@@ -40,7 +40,7 @@ class NeedleReach(PsmEnv):
                             globalScaling=self.SCALING)
         p.changeVisualShape(obj_id, -1, specularColor=(10, 10, 10))
         self.obj_ids['fixed'].append(obj_id)  # 1
-
+        
         # needle
         yaw = (np.random.rand() - 0.5) * np.pi
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
@@ -53,7 +53,7 @@ class NeedleReach(PsmEnv):
         p.changeVisualShape(obj_id, -1, specularColor=(80, 80, 80))
         self.obj_ids['rigid'].append(obj_id)  # 0
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
-
+        
         # For obstacle plotting
         obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/half_sphere.urdf'),
                                  globalScaling=self.SCALING)
@@ -71,7 +71,7 @@ class NeedleReach(PsmEnv):
 
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0], 
-            np.array([2.75, -0.00543937, 3.48]), 
+            np.array([goal[0], goal[1], goal[2] + 0.08]), 
             (-0.70710678, 0., 0., 0.70710678))
         
         return goal.copy()
