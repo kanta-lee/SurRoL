@@ -61,7 +61,7 @@ register(
 )
 register(
     id='NeedlePick-v3',
-    entry_point='surrol.tasks.needle_pick_within_box:NeedlePick',
+    entry_point='surrol.tasks.needle_pick_plate_obstacle:NeedlePick',
     max_episode_steps=100,
 )
 register(
