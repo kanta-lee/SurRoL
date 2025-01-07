@@ -86,8 +86,8 @@ class GauzeRetrieve(PsmEnv):
 
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0], 
-            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.05]), 
-            (-0.70710678, 0., 0., 0.70710678))
+            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.0]), 
+            (0.70710678, 0., 0., 0.70710678))
 
         self._waypoints = [None, None, None, None, None]  # five waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
