@@ -71,8 +71,9 @@ class NeedleReach(PsmEnv):
 
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0], 
-            np.array([goal[0], goal[1], goal[2] + 0.08]), 
-            (-0.70710678, 0., 0., 0.70710678))
+            np.array([goal[0], goal[1], goal[2]]), 
+            p.getQuaternionFromEuler((np.pi, 0., 0.)))
+            # (0.70710678, 0., 0., 0.70710678))
         
         return goal.copy()
 

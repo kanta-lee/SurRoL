@@ -1,7 +1,7 @@
 <?xml version="0.0" ?>
 <robot name="half_sphere">
     <material name="green">
-        <color rgba="0 1 0 0.1"/>
+        <color rgba="0 1 0 0.5"/>
     </material>
 
     <link name="baseLink">
@@ -13,7 +13,7 @@
         <visual>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="meshes/half_sphere.stl" scale="0.02 0.02 0.02"/>
+                <mesh filename="meshes/half_sphere.stl" scale="0.01 0.01 0.01"/>
             </geometry>
             <material name="green"/>
         </visual>

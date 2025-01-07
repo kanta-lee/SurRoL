@@ -62,7 +62,7 @@ class PegTransfer(PsmEnv):
         self.obj_id, self.obj_link1 = self._blocks[0], 1
         
         # For obstacle plotting
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/half_sphere.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/peg_half_sphere.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
@@ -88,8 +88,8 @@ class PegTransfer(PsmEnv):
         
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0], 
-            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.2]), 
-            (-0.70710678, 0., 0., 0.70710678))
+            np.array([self.goal[0], self.goal[1] - 0.1, self.goal[2] + 0.12]), 
+            p.getQuaternionFromEuler((0., 0., 0.)))
         
         self._waypoints = [None, None, None, None, None, None]  # six waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
