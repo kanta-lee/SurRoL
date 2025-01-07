@@ -89,7 +89,7 @@ class PegTransfer(PsmEnv):
         # Reset obstacle position (constant so far)
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1] - 0.1, self.goal[2] + 0.08]),
+            np.array([self.goal[0], self.goal[1] - 0.12, self.goal[2] + 0.1]),
             (0, 0, 0, 1))
         
         self._waypoints = [None, None, None, None, None, None]  # six waypoints
