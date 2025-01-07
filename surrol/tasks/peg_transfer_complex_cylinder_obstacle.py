@@ -87,7 +87,7 @@ class PegTransfer(PsmEnv):
         super()._sample_goal_callback()
 
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.53, 0.2, 3.7208]), (-0.49961875, -0.2000205, -0.03681018, 0.84203202))
+            self.obj_ids['obstacle'][0], np.array([2.53, 0.2, 3.74]), (-0.50843068, -0.35899255, -0.24560002, 0.74317106))
 
         self._waypoints = [None, None, None, None, None, None]  # six waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)

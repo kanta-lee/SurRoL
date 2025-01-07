@@ -70,7 +70,7 @@ class NeedleReach(PsmEnv):
         goal = np.array([pos[0], pos[1], pos[2] + 0.005 * self.SCALING])
 
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.56, 0.2, 3.64]), (-0.41185378, -0.2238896, -0.04537161, 0.88215152))
+            self.obj_ids['obstacle'][0], np.array([2.56, 0.18, 3.67]), (-0.53905619, -0.21459531, -0.07831978, 0.81069926))
         return goal.copy()
 
     def get_oracle_action(self, obs) -> np.ndarray:
