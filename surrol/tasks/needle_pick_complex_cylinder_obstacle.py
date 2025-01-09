@@ -80,7 +80,7 @@ class NeedlePick(PsmEnv):
         super()._sample_goal_callback()
         # The obstacle is placed at [2.66255212, -0.00543937, 3.49126458] xyz coordinate
         p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0], np.array([2.58, 0.17, 3.524]), (-0.37308876, 0.20558254, 0.90071594, 0.08515507))
+            self.obj_ids['obstacle'][0], np.array([2.58, 0.17, 3.55]), (-0.37308876, 0.20558254, 0.90071594, 0.08515507))
         self._waypoints = [None, None, None, None]  # four waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
         self._waypoint_z_init = pos_obj[2]
