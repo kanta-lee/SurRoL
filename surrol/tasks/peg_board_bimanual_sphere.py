@@ -104,6 +104,11 @@ class BiPegBoard(PsmsEnv):
             roll=0,
             upAxisIndex=2
         )
+        
+        # obstacle
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
+                                 globalScaling=self.SCALING)
+        self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
 
     def _set_action(self, action: np.ndarray):
@@ -161,6 +166,13 @@ class BiPegBoard(PsmsEnv):
         """ Define waypoints
         """
         super()._sample_goal_callback()
+        
+        # Reset obstacle position (constant so far)
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][0],
+            np.array([self.goal[0], self.goal[1] - 0.12, self.goal[2] + 0.1]),
+            (0, 0, 0, 1))
+        
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)
         pos_obj2, orn_obj2 = get_link_pose(self.obj_id, self.obj_link2)
