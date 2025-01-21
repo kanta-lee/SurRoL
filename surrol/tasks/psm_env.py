@@ -91,7 +91,7 @@ class PsmEnv(SurRoLGoalEnv):
 
     def _env_setup(self):
         # for venv
-        self.obj_ids = {'fixed': [], 'rigid': [], 'deformable': []}
+        self.obj_ids = {'fixed': [], 'rigid': [], 'deformable': [], 'obstacle': []}
 
         # camera
         if self._render_mode == 'human':
