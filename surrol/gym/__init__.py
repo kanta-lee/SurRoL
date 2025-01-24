@@ -77,6 +77,12 @@ register(
 )
 
 register(
+    id='BiPegBoard-v2',
+    entry_point='surrol.tasks.peg_board_bimanual_cylinder:BiPegBoard',
+    max_episode_steps=100,
+)
+
+register(
     id='MatchBoard-v0',
     entry_point='surrol.tasks.match_board:MatchBoard',
     max_episode_steps=150,

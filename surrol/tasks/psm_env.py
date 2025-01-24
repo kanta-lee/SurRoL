@@ -94,9 +94,8 @@ class PsmEnv(SurRoLGoalEnv):
             return np.array([])
         # front
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
-            cameraTargetPosition=(-0.05 * self.SCALING,
-                                  0, 0.375 * self.SCALING),
-            distance=0.81 * self.SCALING,
+            cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.395 * self.SCALING),
+            distance=0.85 * self.SCALING,
             yaw=90,
             pitch=-30,
             roll=0,
@@ -108,8 +107,8 @@ class PsmEnv(SurRoLGoalEnv):
         # right
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(0.55 * self.SCALING,
-                                  -0.52 * self.SCALING, 0.375 * self.SCALING),
-            distance=0.81 * self.SCALING,
+                                  -0.52 * self.SCALING, 0.395 * self.SCALING),
+            distance=0.85 * self.SCALING,
             yaw=180,
             pitch=-30,
             roll=0,
@@ -120,9 +119,8 @@ class PsmEnv(SurRoLGoalEnv):
 
         # top
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
-            cameraTargetPosition=(0.55 * self.SCALING,
-                                  0, 0.05 * self.SCALING),
-            distance=0.81 * self.SCALING,
+            cameraTargetPosition=(0.55 * self.SCALING, 0, 0.05 * self.SCALING),
+            distance=0.85 * self.SCALING,
             yaw=90,
             pitch=-90,
             roll=0,

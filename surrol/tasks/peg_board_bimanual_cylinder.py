@@ -5,6 +5,11 @@ import random
 import pybullet as p
 import pybullet_data
 
+import sys
+print("sys.path:", sys.path)
+sys.path.insert(0, os.path.abspath("/Users/kantaphat/Research/ViSkill/SurRoL"))
+print("Appended sys.path:", sys.path)
+
 from surrol.tasks.psm_env import PsmsEnv, goal_distance
 from surrol.utils.pybullet_utils import (
     get_link_pose,
@@ -106,7 +111,7 @@ class BiPegBoard(PsmsEnv):
         )
         
         # obstacle
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'cylinder/cylinder_phase_1.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
@@ -170,7 +175,7 @@ class BiPegBoard(PsmsEnv):
         # Reset obstacle position (constant so far)
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.3]),
+            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.1]),
             (0, 0, 0, 1))
         
         self._waypoints = []  # eleven waypoints
@@ -271,7 +276,8 @@ class BiPegBoard(PsmsEnv):
                     and np.linalg.norm(delta_pos2) * 0.01 / scale_factor < 2e-3 and np.abs(delta_yaw2) < np.deg2rad(2.):
                 self._waypoints_done[i] = True
             break
-        return action, i
+        return action
+        # return action, i
 
     @property
     def waypoints(self):
