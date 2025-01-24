@@ -5,10 +5,9 @@ import random
 import pybullet as p
 import pybullet_data
 
-import sys
-print("sys.path:", sys.path)
-sys.path.insert(0, os.path.abspath("/Users/kantaphat/Research/ViSkill/SurRoL"))
-print("Appended sys.path:", sys.path)
+# Use in local computer for debugging
+# import sys
+# sys.path.insert(0, os.path.abspath("/Users/kantaphat/Research/ViSkill/SurRoL"))
 
 from surrol.tasks.psm_env import PsmsEnv, goal_distance
 from surrol.utils.pybullet_utils import (
