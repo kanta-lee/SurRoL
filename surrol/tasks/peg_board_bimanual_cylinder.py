@@ -5,6 +5,14 @@ import random
 import pybullet as p
 import pybullet_data
 
+from surrol.utils.pybullet_utils import (
+    render_image,
+)
+from surrol.gym.surrol_env import (
+    RENDER_HEIGHT,
+    RENDER_WIDTH
+)
+
 # Use in local computer for debugging
 # import sys
 # sys.path.insert(0, os.path.abspath("/Users/kantaphat/Research/ViSkill/SurRoL"))
@@ -114,6 +122,51 @@ class BiPegBoard(PsmsEnv):
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
 
+    def render_three_views(self, mode='rgb_array'):
+        self._render_callback(mode)
+        if mode == "human":
+            return np.array([])
+        # front
+        _view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.395 * self.SCALING),
+            distance=0.85 * self.SCALING,
+            yaw=90,
+            pitch=-30,
+            roll=0,
+            upAxisIndex=2
+        )
+        front_rgb_array, _ = render_image(RENDER_WIDTH, RENDER_HEIGHT,
+                                       _view_matrix, self._proj_matrix)
+
+        # right
+        _view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=(0.55 * self.SCALING,
+                                  -0.52 * self.SCALING, 0.395 * self.SCALING),
+            distance=0.85 * self.SCALING,
+            yaw=180,
+            pitch=-30,
+            roll=0,
+            upAxisIndex=2
+        )
+        right_rgb_array, _ = render_image(RENDER_WIDTH, RENDER_HEIGHT,
+                                       _view_matrix, self._proj_matrix)
+
+        # top
+        goal = np.array(get_link_pose(self.obj_ids['fixed'][-1], 1)[0])
+        _view_matrix = p.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=(goal[0], goal[1], 0.05 * self.SCALING),
+            distance=0.85 * self.SCALING,
+            yaw=90,
+            pitch=-90,
+            roll=0,
+            upAxisIndex=2
+        )
+        top_rgb_array, _ = render_image(RENDER_WIDTH, RENDER_HEIGHT,
+                                       _view_matrix, self._proj_matrix)
+        if mode == 'rgb_array':
+            return [front_rgb_array, right_rgb_array, top_rgb_array]
+        else:
+            raise ValueError('Masks are not saved')
 
     def _set_action(self, action: np.ndarray):
         """
@@ -275,8 +328,8 @@ class BiPegBoard(PsmsEnv):
                     and np.linalg.norm(delta_pos2) * 0.01 / scale_factor < 2e-3 and np.abs(delta_yaw2) < np.deg2rad(2.):
                 self._waypoints_done[i] = True
             break
-        return action
-        # return action, i
+        # return action
+        return action, i
 
     @property
     def waypoints(self):

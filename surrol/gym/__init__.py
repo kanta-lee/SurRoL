@@ -39,6 +39,12 @@ register(
     max_episode_steps=100,
 )
 
+register(
+    id='BiPegTransfer-v1',
+    entry_point='surrol.tasks.peg_transfer_bimanual_sphere:BiPegTransfer',
+    max_episode_steps=100,
+)
+
 # ECM Env
 register(
     id='ECMReach-v0',
