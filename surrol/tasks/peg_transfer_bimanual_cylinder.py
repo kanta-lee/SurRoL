@@ -78,9 +78,12 @@ class BiPegTransfer(PsmsEnv):
         self.obj_id, self.obj_link1, self.obj_link2 = self._blocks[0], 1, 2
 
         # obstacle
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'cylinder/cylinder_phase_1.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'cylinder/cylinder_phase_1.urdf'),
+                                 globalScaling=self.SCALING)
+        self.obj_ids['obstacle'].append(obstacle_id)  # 1
         
     # def _set_action(self, action: np.ndarray):
     #     # simplified to a hand and drop by performing the first three steps
@@ -110,10 +113,21 @@ class BiPegTransfer(PsmsEnv):
         super()._sample_goal_callback()
         
         # Reset obstacle position (constant so far)
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][0],
+        #     np.array([self.goal[0], self.goal[1], self.goal[2] + 0.1]),
+        #     (0, 0, 0, 1))
+
+        # sphere
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.1]),
+            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.3]),
             (0, 0, 0, 1))
+        # cylinder
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][1],
+            np.array([2.55, 0.21, 3.83]),
+            (-0.5, 0., 0., 0.8660254))
         
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)

@@ -118,9 +118,12 @@ class BiPegBoard(PsmsEnv):
         )
         
         # obstacle
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'cylinder/cylinder_phase_1.urdf'),
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 0
+        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'cylinder/cylinder_phase_1.urdf'),
+                                 globalScaling=self.SCALING)
+        self.obj_ids['obstacle'].append(obstacle_id)  # 1
 
     def render_three_views(self, mode='rgb_array'):
         self._render_callback(mode)
@@ -225,10 +228,16 @@ class BiPegBoard(PsmsEnv):
         super()._sample_goal_callback()
         
         # Reset obstacle position (constant so far)
+        # sphere
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.1]),
+            np.array([self.goal[0]-0.06, self.goal[1], self.goal[2] + 0.3]),
             (0, 0, 0, 1))
+        # cylinder
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][1],
+            np.array([2.54, 0.19, 3.77]),
+            (-0.38268343, 0., 0., 0.92387953))
         
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)

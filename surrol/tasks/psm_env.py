@@ -119,7 +119,7 @@ class PsmEnv(SurRoLGoalEnv):
 
         # top
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
-            cameraTargetPosition=(0.55 * self.SCALING, 0, 0.05 * self.SCALING),
+            cameraTargetPosition=(0.52 * self.SCALING, 0, 0.05 * self.SCALING),
             distance=0.85 * self.SCALING,
             yaw=90,
             pitch=-90,
