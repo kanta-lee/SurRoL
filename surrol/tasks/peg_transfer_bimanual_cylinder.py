@@ -85,6 +85,14 @@ class BiPegTransfer(PsmsEnv):
                                  globalScaling=self.SCALING)
         self.obj_ids['obstacle'].append(obstacle_id)  # 1
         
+        # Object to show current PSM's position
+        psm1_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/psm.urdf'),
+                                 globalScaling=self.SCALING)
+        self.obj_ids['obstacle'].append(psm1_id)  # 2
+        psm2_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/psm.urdf'),
+                                 globalScaling=self.SCALING)
+        self.obj_ids['obstacle'].append(psm2_id)  # 3
+        
     # def _set_action(self, action: np.ndarray):
     #     # simplified to a hand and drop by performing the first three steps
     #     obs = self._get_obs()
@@ -101,6 +109,22 @@ class BiPegTransfer(PsmsEnv):
     #         np.abs(achieved_goal[..., -1] - desired_goal[..., -1]) < 4e-3 * self.SCALING
     #     ).astype(np.float32)
 
+    def _custom_callback(self):
+        """ Display current PSMs' positions.
+        """
+        # PSMs
+        psm1_pos = self._get_robot_state(0)[0:3]
+        psm2_pos = self._get_robot_state(1)[0:3]
+
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][2],
+            psm1_pos,
+            (0, 0, 0, 1))
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][3],
+            psm2_pos,
+            (0, 0, 0, 1))
+    
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
         """
@@ -121,13 +145,13 @@ class BiPegTransfer(PsmsEnv):
         # sphere
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1], self.goal[2] + 0.3]),
+            np.array([self.goal[0], self.goal[1] - 0.15, self.goal[2] + 0.15]),
             (0, 0, 0, 1))
         # cylinder
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][1],
             np.array([2.55, 0.21, 3.83]),
-            (-0.5, 0., 0., 0.8660254))
+            p.getQuaternionFromEuler((-np.pi / 3, -np.pi / 6, 0)))
         
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)

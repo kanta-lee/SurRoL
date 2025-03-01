@@ -17,7 +17,7 @@
         <color rgba="0.80 0.80 0.80 1"/>
     </material>
     <material name="silver">
-        <color rgba="0.8941 0.8941 0.8863 1"/>
+        <color rgba="0.8941 0.8941 0.8863 0.6"/>
     </material>
     <material name="black">
         <color rgba="0.0314 0.0314 0.0314 1"/>
