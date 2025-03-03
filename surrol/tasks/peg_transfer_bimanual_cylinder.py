@@ -40,7 +40,6 @@ class BiPegTransfer(PsmsEnv):
         joint_positions = self.psm2.inverse_kinematics((pos, orn), self.psm2.EEF_LINK_INDEX)
         self.psm2.reset_joint(joint_positions)
         self.block_gripper = False
-
         # peg board
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'peg_board/peg_board.urdf'),
                             np.array(self.POSE_BOARD[0]) * self.SCALING,
@@ -145,13 +144,14 @@ class BiPegTransfer(PsmsEnv):
         # sphere
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1] - 0.15, self.goal[2] + 0.15]),
+            np.array([2.8 - 0.1, 0.215 - 0.15, 3.5405 + 0.15]),
+            # np.array([self.goal[0], self.goal[1] - 0.15, self.goal[2] + 0.15]),
             (0, 0, 0, 1))
         # cylinder
         p.resetBasePositionAndOrientation(
             self.obj_ids['obstacle'][1],
-            np.array([2.55, 0.21, 3.83]),
-            p.getQuaternionFromEuler((-np.pi / 3, -np.pi / 6, 0)))
+            np.array([2.5, 0.25, 3.776]),
+            p.getQuaternionFromEuler((-np.pi / 4, 0, np.pi / 6)))
         
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)
