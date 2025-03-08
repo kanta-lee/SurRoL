@@ -95,8 +95,7 @@ class SurRoLEnv(gym.Env):
         action = np.clip(action, self.action_space.low, self.action_space.high)
         # time0 = time.time()
         self._set_action(action)
-        # Callback to display current PSMs' positions
-        self._custom_callback()
+        
         # time1 = time.time()
         # TODO: check the best way to step simulation
         step(self._duration)

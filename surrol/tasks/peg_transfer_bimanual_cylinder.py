@@ -108,7 +108,7 @@ class BiPegTransfer(PsmsEnv):
     #         np.abs(achieved_goal[..., -1] - desired_goal[..., -1]) < 4e-3 * self.SCALING
     #     ).astype(np.float32)
 
-    def _custom_callback(self):
+    def _render_callback(self, mode):
         """ Display current PSMs' positions.
         """
         # PSMs
