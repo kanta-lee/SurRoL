@@ -141,17 +141,17 @@ class BiPegTransfer(PsmsEnv):
         #     np.array([self.goal[0], self.goal[1], self.goal[2] + 0.1]),
         #     (0, 0, 0, 1))
 
-        # sphere
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0],
-            np.array([2.8 - 0.1, 0.215 - 0.15, 3.5405 + 0.15]),
-            # np.array([self.goal[0], self.goal[1] - 0.15, self.goal[2] + 0.15]),
-            (0, 0, 0, 1))
-        # cylinder
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][1],
-            np.array([2.5, 0.25, 3.776]),
-            p.getQuaternionFromEuler((-np.pi / 4, 0, np.pi / 6)))
+        # # sphere
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][0],
+        #     np.array([2.8 - 0.1, 0.215 - 0.15, 3.5405 + 0.15]),
+        #     # np.array([self.goal[0], self.goal[1] - 0.15, self.goal[2] + 0.15]),
+        #     (0, 0, 0, 1))
+        # # cylinder
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][1],
+        #     np.array([2.5, 0.25, 3.776]),
+        #     p.getQuaternionFromEuler((-np.pi / 4, 0, np.pi / 6)))
         
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)
@@ -218,6 +218,110 @@ class BiPegTransfer(PsmsEnv):
         self.subgoals.append(np.array([nsd_pos_mid1[0], nsd_pos_mid1[1], nsd_pos_mid1[2] + 0.015 * self.SCALING, pos_obj2[0], pos_obj2[1], nsd_pos_mid2[2]]))
         self.subgoals.append(np.array([nsd_pos_mid2[0], nsd_pos_mid2[1], nsd_pos_mid2[2] + 0.015 * self.SCALING, middle_place[0], middle_place[1], pos_place[2]]))
         self.subgoals.append(np.array([nsd_pos_mid2[0], nsd_pos_mid2[1], nsd_pos_mid2[2] + 0.015 * self.SCALING, self.goal[0], self.goal[1], self.goal[2]]))
+
+        #---------------------------- Create waypoint line ----------------------------
+        
+        """ Create green spheres at each waypoint for visualization.
+        """
+        radius = 0.007  # Radius of the cylinder (adjust as needed)
+        color = [0, 1, 0, 1]  # Green color for visibility
+        # psm1_count = 0
+        # psm2_count = 0
+
+        for i, waypoint in enumerate(self._waypoints):
+            # ---------------------------- PSM 1 ---------------------------
+            if i == 0:
+                start_point = self._get_robot_state(0)[0:3]
+                end_point = waypoint[0:3]  # Next PSM1's position
+            else:
+                start_point = self._waypoints[i - 1][0:3]
+                end_point = waypoint[0:3]
+            
+            # Calculate the midpoint and the height of the cylinder
+            midpoint = [(start_point[0] + end_point[0]) / 2,
+                        (start_point[1] + end_point[1]) / 2,
+                        (start_point[2] + end_point[2]) / 2]
+            
+            # Calculate the distance between the two points
+            distance = np.linalg.norm(np.array(end_point) - np.array(start_point))
+            
+            # Normalize the direction vector
+            direction = np.array(end_point) - np.array(start_point)
+            V_norm = direction / distance
+            Z = np.array([0, 0, 1])
+            # Rotation axis and angle
+            A = np.cross(Z, V_norm)
+            A_norm = np.linalg.norm(A)
+            if A_norm > 1e-6:  # Check if not parallel
+                A = A / A_norm
+                theta = np.arccos(np.dot(Z, V_norm))
+                w = np.cos(theta / 2)
+                sin_theta_2 = np.sin(theta / 2)
+                x, y, z = A * sin_theta_2
+                rotation = [x, y, z, w]
+            else:
+                rotation = [0, 0, 0, 1]
+
+            # # Calculate yaw and pitch
+            # yaw = np.arctan2(unit_vector[1], unit_vector[0])
+            # pitch = np.arctan2(unit_vector[2], np.sqrt(unit_vector[0]**2 + unit_vector[1]**2))
+ 
+            # # Convert to quaternion
+            # rotation = p.getQuaternionFromEuler([0, pitch, yaw])  # Roll is set to 0
+            # print(rotation)
+            
+            # axis = np.array([0, 0, 1])  # Default axis for cylinder
+            
+            # Create the cylinder
+            visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
+            p.createMultiBody(baseMass=0, # baseCollisionShapeIndex=cylinder_id, 
+                              baseVisualShapeIndex=visual_id,
+                              basePosition=midpoint,
+                              baseOrientation=rotation)
+            
+            # p.addUserDebugText(str(psm1_count), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[1, 1, 1], textSize=1.2)
+            # psm1_count += 1
+
+            # ---------------------------- PSM 2 ---------------------------
+            if i == 0:
+                start_point = self._get_robot_state(1)[0:3]
+                end_point = waypoint[5:8]  # Next PSM1's position
+            else:
+                start_point = self._waypoints[i - 1][5:8]
+                end_point = waypoint[5:8]
+            
+            # Calculate the midpoint and the height of the cylinder
+            midpoint = [(start_point[0] + end_point[0]) / 2,
+                        (start_point[1] + end_point[1]) / 2,
+                        (start_point[2] + end_point[2]) / 2]
+            
+            # Calculate the distance between the two points
+            distance = np.linalg.norm(np.array(end_point) - np.array(start_point))
+            
+            # Normalize the direction vector
+            direction = np.array(end_point) - np.array(start_point)
+            V_norm = direction / distance
+            Z = np.array([0, 0, 1])
+            # Rotation axis and angle
+            A = np.cross(Z, V_norm)
+            A_norm = np.linalg.norm(A)
+            if A_norm > 1e-6:  # Check if not parallel
+                A = A / A_norm
+                theta = np.arccos(np.dot(Z, V_norm))
+                w = np.cos(theta / 2)
+                sin_theta_2 = np.sin(theta / 2)
+                x, y, z = A * sin_theta_2
+                rotation = [x, y, z, w]
+            else:
+                rotation = [0, 0, 0, 1]
+
+            visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
+            p.createMultiBody(baseMass=0, baseVisualShapeIndex=visual_id,
+                                            basePosition=midpoint, baseOrientation=rotation)
+
+            # p.addUserDebugText(str(psm2_count), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[0, 0, 0], textSize=1.2)
+            # psm2_count += 1
+    
         
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
