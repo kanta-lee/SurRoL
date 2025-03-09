@@ -225,8 +225,8 @@ class BiPegTransfer(PsmsEnv):
         """
         radius = 0.007  # Radius of the cylinder (adjust as needed)
         color = [0, 1, 0, 1]  # Green color for visibility
-        # psm1_count = 0
-        # psm2_count = 0
+        psm1_count = 0
+        psm2_count = 0
 
         for i, waypoint in enumerate(self._waypoints):
             # ---------------------------- PSM 1 ---------------------------
@@ -238,51 +238,55 @@ class BiPegTransfer(PsmsEnv):
                 end_point = waypoint[0:3]
             
             # Calculate the midpoint and the height of the cylinder
-            midpoint = [(start_point[0] + end_point[0]) / 2,
-                        (start_point[1] + end_point[1]) / 2,
-                        (start_point[2] + end_point[2]) / 2]
+            midpoint = (start_point + end_point) / 2
             
             # Calculate the distance between the two points
             distance = np.linalg.norm(np.array(end_point) - np.array(start_point))
             
-            # Normalize the direction vector
-            direction = np.array(end_point) - np.array(start_point)
-            V_norm = direction / distance
-            Z = np.array([0, 0, 1])
-            # Rotation axis and angle
-            A = np.cross(Z, V_norm)
-            A_norm = np.linalg.norm(A)
-            if A_norm > 1e-6:  # Check if not parallel
-                A = A / A_norm
-                theta = np.arccos(np.dot(Z, V_norm))
-                w = np.cos(theta / 2)
-                sin_theta_2 = np.sin(theta / 2)
-                x, y, z = A * sin_theta_2
-                rotation = [x, y, z, w]
-            else:
-                rotation = [0, 0, 0, 1]
-
-            # # Calculate yaw and pitch
-            # yaw = np.arctan2(unit_vector[1], unit_vector[0])
-            # pitch = np.arctan2(unit_vector[2], np.sqrt(unit_vector[0]**2 + unit_vector[1]**2))
- 
-            # # Convert to quaternion
-            # rotation = p.getQuaternionFromEuler([0, pitch, yaw])  # Roll is set to 0
-            # print(rotation)
-            
-            # axis = np.array([0, 0, 1])  # Default axis for cylinder
-            
-            # Create the cylinder
-            visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
-            p.createMultiBody(baseMass=0, # baseCollisionShapeIndex=cylinder_id, 
-                              baseVisualShapeIndex=visual_id,
-                              basePosition=midpoint,
-                              baseOrientation=rotation)
-            
-            # p.addUserDebugText(str(psm1_count), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[1, 1, 1], textSize=1.2)
-            # psm1_count += 1
-
+            if distance > 0.16:
+                # Since the cylinder is too long, let's try to break it into two smaller
+                # parts to test CBF.
+                noise_std = 0.04
+                noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
+                midpoint += noise
+                
+                # Part 1
+                start1 = start_point
+                end1 = midpoint
+                mid1 = (start1 + end1) / 2
+                dist1 = np.linalg.norm(np.array(end1) - np.array(start1))
+                rot1 = self._rotation(start1, end1, dist1)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist1, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid1,
+                                baseOrientation=rot1)
+                
+                # Part 2
+                start2 = midpoint
+                end2 = end_point
+                mid2 = (start2 + end2) / 2
+                dist2 = np.linalg.norm(np.array(end2) - np.array(start2))
+                rot2 = self._rotation(start2, end2, dist2)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist2, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid2,
+                                baseOrientation=rot2)
+            elif distance > 0:
+                rotation = self._rotation(start_point, end_point, distance)
+                
+                # Create the cylinder
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
+                p.createMultiBody(baseMass=0, # baseCollisionShapeIndex=cylinder_id, 
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=midpoint,
+                                baseOrientation=rotation)
+                
+                # p.addUserDebugText(str(i), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[1, 1, 1], textSize=1.2)
+                psm1_count += 1
             # ---------------------------- PSM 2 ---------------------------
+            
             if i == 0:
                 start_point = self._get_robot_state(1)[0:3]
                 end_point = waypoint[5:8]  # Next PSM1's position
@@ -291,37 +295,76 @@ class BiPegTransfer(PsmsEnv):
                 end_point = waypoint[5:8]
             
             # Calculate the midpoint and the height of the cylinder
-            midpoint = [(start_point[0] + end_point[0]) / 2,
-                        (start_point[1] + end_point[1]) / 2,
-                        (start_point[2] + end_point[2]) / 2]
+            midpoint = (start_point + end_point) / 2
             
             # Calculate the distance between the two points
             distance = np.linalg.norm(np.array(end_point) - np.array(start_point))
             
-            # Normalize the direction vector
-            direction = np.array(end_point) - np.array(start_point)
-            V_norm = direction / distance
-            Z = np.array([0, 0, 1])
-            # Rotation axis and angle
-            A = np.cross(Z, V_norm)
-            A_norm = np.linalg.norm(A)
-            if A_norm > 1e-6:  # Check if not parallel
-                A = A / A_norm
-                theta = np.arccos(np.dot(Z, V_norm))
-                w = np.cos(theta / 2)
-                sin_theta_2 = np.sin(theta / 2)
-                x, y, z = A * sin_theta_2
-                rotation = [x, y, z, w]
-            else:
-                rotation = [0, 0, 0, 1]
+            if distance > 0.16:
+                # Since the cylinder is too long, let's try to break it into two smaller
+                # parts to test CBF.
+                noise_std = 0.04
+                noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
+                midpoint += noise
+                
+                # Part 1
+                start1 = start_point
+                end1 = midpoint
+                mid1 = (start1 + end1) / 2
+                dist1 = np.linalg.norm(np.array(end1) - np.array(start1))
+                rot1 = self._rotation(start1, end1, dist1)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist1, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid1,
+                                baseOrientation=rot1)
+                
+                # Part 2
+                start2 = midpoint
+                end2 = end_point
+                mid2 = (start2 + end2) / 2
+                dist2 = np.linalg.norm(np.array(end2) - np.array(start2))
+                rot2 = self._rotation(start2, end2, dist2)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist2, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid2,
+                                baseOrientation=rot2)
+            elif distance > 0:
+                rotation = self._rotation(start_point, end_point, distance)
+                
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
+                p.createMultiBody(baseMass=0, baseVisualShapeIndex=visual_id,
+                                                basePosition=midpoint, baseOrientation=rotation)
 
-            visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
-            p.createMultiBody(baseMass=0, baseVisualShapeIndex=visual_id,
-                                            basePosition=midpoint, baseOrientation=rotation)
+                # p.addUserDebugText(str(i), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[0, 0, 0], textSize=1.2)
+                psm2_count += 1
+                
+    def _rotation(self, start_point, end_point, distance):
+        """This function returns the rotation / orientation
+        that should be applied to cylinder such that it is 
+        parallel to the vector formed by those two points.
 
-            # p.addUserDebugText(str(psm2_count), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[0, 0, 0], textSize=1.2)
-            # psm2_count += 1
-    
+        Returns:
+            list: orientation of cylinder
+        """
+        # Normalize the direction vector
+        direction = np.array(end_point) - np.array(start_point)
+        V_norm = direction / distance
+        Z = np.array([0, 0, 1])
+        # Rotation axis and angle
+        A = np.cross(Z, V_norm)
+        A_norm = np.linalg.norm(A)
+        if A_norm > 1e-6:  # Check if not parallel
+            A = A / A_norm
+            theta = np.arccos(np.dot(Z, V_norm))
+            w = np.cos(theta / 2)
+            sin_theta_2 = np.sin(theta / 2)
+            x, y, z = A * sin_theta_2
+            return [x, y, z, w]
+        else:
+            return [0, 0, 0, 1]
+
         
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
