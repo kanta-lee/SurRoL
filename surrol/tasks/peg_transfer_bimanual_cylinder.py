@@ -247,7 +247,24 @@ class BiPegTransfer(PsmsEnv):
                 # Since the cylinder is too long, let's try to break it into two smaller
                 # parts to test CBF.
                 noise_std = 0.04
-                noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
+
+                # create a noise which is perpendicular to the line between two points
+                u = np.array(end_point-start_point)  # Given vector
+                if np.allclose(u, 0):  # Edge case: Zero vector
+                    raise ValueError("Input vector must be nonzero.")
+
+                # Generate a random vector not parallel to u
+                random_vec = np.random.randn(3)  # Random vector
+                while np.allclose(np.cross(u, random_vec), 0):  # Avoid collinear case
+                    random_vec = np.random.randn(3)
+
+                # Compute a perpendicular vector using cross product
+                v = np.cross(u, random_vec)
+
+                # Normalize and scale to length noise
+                noise = v / np.linalg.norm(v) * noise_std
+
+                # noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
                 midpoint += noise
                 
                 # Part 1
@@ -304,7 +321,24 @@ class BiPegTransfer(PsmsEnv):
                 # Since the cylinder is too long, let's try to break it into two smaller
                 # parts to test CBF.
                 noise_std = 0.04
-                noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
+
+                # create a noise which is perpendicular to the line between two points
+                u = np.array(end_point - start_point)  # Given vector
+                if np.allclose(u, 0):  # Edge case: Zero vector
+                    raise ValueError("Input vector must be nonzero.")
+
+                # Generate a random vector not parallel to u
+                random_vec = np.random.randn(3)  # Random vector
+                while np.allclose(np.cross(u, random_vec), 0):  # Avoid collinear case
+                    random_vec = np.random.randn(3)
+
+                # Compute a perpendicular vector using cross product
+                v = np.cross(u, random_vec)
+
+                # Normalize and scale to length noise
+                noise = v / np.linalg.norm(v) * noise_std
+
+                # noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
                 midpoint += noise
                 
                 # Part 1
