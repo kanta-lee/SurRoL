@@ -229,15 +229,15 @@ class BiPegBoard(PsmsEnv):
         
         # Reset obstacle position (constant so far)
         # sphere
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0],
-            np.array([self.goal[0]-0.06, self.goal[1], self.goal[2] + 0.3]),
-            (0, 0, 0, 1))
-        # cylinder
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][1],
-            np.array([2.54, 0.19, 3.77]),
-            (-0.38268343, 0., 0., 0.92387953))
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][0],
+        #     np.array([self.goal[0]-0.06, self.goal[1], self.goal[2] + 0.3]),
+        #     (0, 0, 0, 1))
+        # # cylinder
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][1],
+        #     np.array([2.54, 0.19, 3.77]),
+        #     (-0.38268343, 0., 0., 0.92387953))
         
         self._waypoints = []  # eleven waypoints
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)
@@ -302,7 +302,187 @@ class BiPegBoard(PsmsEnv):
         self.subgoals.append(np.array([nsd_pos_mid1[0], nsd_pos_mid1[1], nsd_pos_mid1[2], nsd_pos_mid2[0], pos_obj2[1], pos_mid2[2]]))
         self.subgoals.append(np.array([nsd_pos_mid2[0], nsd_pos_mid2[1], nsd_pos_mid2[2], nsd_pos_mid1[0], nsd_pos_mid1[1] + 0.02 * self.SCALING, nsd_pos_mid1[2]]))
         self.subgoals.append(np.array([nsd_pos_mid2[0], nsd_pos_mid2[1], nsd_pos_mid2[2], target_pos[0], target_pos[1], target_pos[2]]))
+        
+        #---------------------------- Create waypoint line ----------------------------
+        
+        """ Create green spheres at each waypoint for visualization.
+        """
+        radius = 0.007  # Radius of the cylinder (adjust as needed)
+        color = [0, 1, 0, 1]  # Green color for visibility
+        psm1_count = 0
+        psm2_count = 0
 
+        for i, waypoint in enumerate(self._waypoints):
+            # ---------------------------- PSM 1 ---------------------------
+            if i == 0:
+                start_point = self._get_robot_state(0)[0:3]
+                end_point = waypoint[0:3]  # Next PSM1's position
+            else:
+                start_point = self._waypoints[i - 1][0:3]
+                end_point = waypoint[0:3]
+            
+            # Calculate the midpoint and the height of the cylinder
+            midpoint = (start_point + end_point) / 2
+            
+            # Calculate the distance between the two points
+            distance = np.linalg.norm(np.array(end_point) - np.array(start_point))
+            
+            if distance > 0.16:
+                # Since the cylinder is too long, let's try to break it into two smaller
+                # parts to test CBF.
+                noise_std = 0.04
+
+                # create a noise which is perpendicular to the line between two points
+                u = np.array(end_point-start_point)  # Given vector
+                if np.allclose(u, 0):  # Edge case: Zero vector
+                    raise ValueError("Input vector must be nonzero.")
+
+                # Generate a random vector not parallel to u
+                random_vec = np.random.randn(3)  # Random vector
+                while np.allclose(np.cross(u, random_vec), 0):  # Avoid collinear case
+                    random_vec = np.random.randn(3)
+
+                # Compute a perpendicular vector using cross product
+                v = np.cross(u, random_vec)
+
+                # Normalize and scale to length noise
+                noise = v / np.linalg.norm(v) * noise_std
+
+                # noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
+                midpoint += noise
+                
+                # Part 1
+                start1 = start_point
+                end1 = midpoint
+                mid1 = (start1 + end1) / 2
+                dist1 = np.linalg.norm(np.array(end1) - np.array(start1))
+                rot1 = self._rotation(start1, end1, dist1)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist1, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid1,
+                                baseOrientation=rot1)
+                
+                # Part 2
+                start2 = midpoint
+                end2 = end_point
+                mid2 = (start2 + end2) / 2
+                dist2 = np.linalg.norm(np.array(end2) - np.array(start2))
+                rot2 = self._rotation(start2, end2, dist2)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist2, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid2,
+                                baseOrientation=rot2)
+            elif distance > 0:
+                rotation = self._rotation(start_point, end_point, distance)
+                
+                # Create the cylinder
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
+                p.createMultiBody(baseMass=0, # baseCollisionShapeIndex=cylinder_id, 
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=midpoint,
+                                baseOrientation=rotation)
+                
+                # p.addUserDebugText(str(i), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[1, 1, 1], textSize=1.2)
+                psm1_count += 1
+            # ---------------------------- PSM 2 ---------------------------
+            
+            if i == 0:
+                start_point = self._get_robot_state(1)[0:3]
+                end_point = waypoint[5:8]  # Next PSM1's position
+            else:
+                start_point = self._waypoints[i - 1][5:8]
+                end_point = waypoint[5:8]
+            
+            # Calculate the midpoint and the height of the cylinder
+            midpoint = (start_point + end_point) / 2
+            
+            # Calculate the distance between the two points
+            distance = np.linalg.norm(np.array(end_point) - np.array(start_point))
+            
+            if distance > 0.16:
+                # Since the cylinder is too long, let's try to break it into two smaller
+                # parts to test CBF.
+                noise_std = 0.04
+
+                # create a noise which is perpendicular to the line between two points
+                u = np.array(end_point - start_point)  # Given vector
+                if np.allclose(u, 0):  # Edge case: Zero vector
+                    raise ValueError("Input vector must be nonzero.")
+
+                # Generate a random vector not parallel to u
+                random_vec = np.random.randn(3)  # Random vector
+                while np.allclose(np.cross(u, random_vec), 0):  # Avoid collinear case
+                    random_vec = np.random.randn(3)
+
+                # Compute a perpendicular vector using cross product
+                v = np.cross(u, random_vec)
+
+                # Normalize and scale to length noise
+                noise = v / np.linalg.norm(v) * noise_std
+
+                # noise = np.clip(noise_std * np.random.random(3), -noise_std, noise_std)
+                midpoint += noise
+                
+                # Part 1
+                start1 = start_point
+                end1 = midpoint
+                mid1 = (start1 + end1) / 2
+                dist1 = np.linalg.norm(np.array(end1) - np.array(start1))
+                rot1 = self._rotation(start1, end1, dist1)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist1, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid1,
+                                baseOrientation=rot1)
+                
+                # Part 2
+                start2 = midpoint
+                end2 = end_point
+                mid2 = (start2 + end2) / 2
+                dist2 = np.linalg.norm(np.array(end2) - np.array(start2))
+                rot2 = self._rotation(start2, end2, dist2)
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=dist2, rgbaColor=color)
+                p.createMultiBody(baseMass=0,
+                                baseVisualShapeIndex=visual_id,
+                                basePosition=mid2,
+                                baseOrientation=rot2)
+            elif distance > 0:
+                rotation = self._rotation(start_point, end_point, distance)
+                
+                visual_id = p.createVisualShape(p.GEOM_CYLINDER, radius=radius, length=distance, rgbaColor=color)
+                p.createMultiBody(baseMass=0, baseVisualShapeIndex=visual_id,
+                                                basePosition=midpoint, baseOrientation=rotation)
+
+                # p.addUserDebugText(str(i), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[0, 0, 0], textSize=1.2)
+                psm2_count += 1
+        
+    def _rotation(self, start_point, end_point, distance):
+        """This function returns the rotation / orientation
+        that should be applied to cylinder such that it is 
+        parallel to the vector formed by those two points.
+
+        Returns:
+            list: orientation of cylinder
+        """
+        # Normalize the direction vector
+        direction = np.array(end_point) - np.array(start_point)
+        V_norm = direction / distance
+        Z = np.array([0, 0, 1])
+        # Rotation axis and angle
+        A = np.cross(Z, V_norm)
+        A_norm = np.linalg.norm(A)
+        if A_norm > 1e-6:  # Check if not parallel
+            A = A / A_norm
+            theta = np.arccos(np.dot(Z, V_norm))
+            w = np.cos(theta / 2)
+            sin_theta_2 = np.sin(theta / 2)
+            x, y, z = A * sin_theta_2
+            return [x, y, z, w]
+        else:
+            return [0, 0, 0, 1]
+        
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
         pose = get_link_pose(self.obj_id, -1)
@@ -337,8 +517,8 @@ class BiPegBoard(PsmsEnv):
                     and np.linalg.norm(delta_pos2) * 0.01 / scale_factor < 2e-3 and np.abs(delta_yaw2) < np.deg2rad(2.):
                 self._waypoints_done[i] = True
             break
-        # return action
-        return action, i
+        return action
+        # return action, i
 
     @property
     def waypoints(self):
