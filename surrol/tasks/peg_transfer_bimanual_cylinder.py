@@ -154,6 +154,11 @@ class BiPegTransfer(PsmsEnv):
         #     p.getQuaternionFromEuler((-np.pi / 4, 0, np.pi / 6)))
         
         self._waypoints = []  # eleven waypoints
+        
+        # Store the starting and ending point of each cylinder form
+        # as waypoint trajectory to calculate distance from PSM to
+        # cylinder axis
+        self._cylinders_start_end = []
         pos_obj1, orn_obj1 = get_link_pose(self.obj_id, self.obj_link1)
         pos_obj2, orn_obj2 = get_link_pose(self.obj_id, self.obj_link2)
         orn1 = p.getEulerFromQuaternion(orn_obj1)
@@ -278,6 +283,8 @@ class BiPegTransfer(PsmsEnv):
                                 baseVisualShapeIndex=visual_id,
                                 basePosition=mid1,
                                 baseOrientation=rot1)
+                # Store points for distance calculation
+                self._cylinders_start_end.append((start1, end1))
                 
                 # Part 2
                 start2 = midpoint
@@ -290,6 +297,8 @@ class BiPegTransfer(PsmsEnv):
                                 baseVisualShapeIndex=visual_id,
                                 basePosition=mid2,
                                 baseOrientation=rot2)
+                # Store points for distance calculation
+                self._cylinders_start_end.append((start2, end2))
             elif distance > 0:
                 rotation = self._rotation(start_point, end_point, distance)
                 
@@ -302,6 +311,9 @@ class BiPegTransfer(PsmsEnv):
                 
                 # p.addUserDebugText(str(i), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[1, 1, 1], textSize=1.2)
                 psm1_count += 1
+                
+                # Store points for distance calculation
+                self._cylinders_start_end.append((start_point, end_point))
             # ---------------------------- PSM 2 ---------------------------
             
             if i == 0:
@@ -352,6 +364,8 @@ class BiPegTransfer(PsmsEnv):
                                 baseVisualShapeIndex=visual_id,
                                 basePosition=mid1,
                                 baseOrientation=rot1)
+                # Store points for distance calculation
+                self._cylinders_start_end.append((start1, end1))
                 
                 # Part 2
                 start2 = midpoint
@@ -364,6 +378,8 @@ class BiPegTransfer(PsmsEnv):
                                 baseVisualShapeIndex=visual_id,
                                 basePosition=mid2,
                                 baseOrientation=rot2)
+                # Store points for distance calculation
+                self._cylinders_start_end.append((start2, end2))
             elif distance > 0:
                 rotation = self._rotation(start_point, end_point, distance)
                 
@@ -373,6 +389,8 @@ class BiPegTransfer(PsmsEnv):
 
                 # p.addUserDebugText(str(i), textPosition=midpoint + np.array([0, 0, 0.01]), textColorRGB=[0, 0, 0], textSize=1.2)
                 psm2_count += 1
+                # Store points for distance calculation
+                self._cylinders_start_end.append((start_point, end_point))
                 
     def _rotation(self, start_point, end_point, distance):
         """This function returns the rotation / orientation
@@ -399,7 +417,79 @@ class BiPegTransfer(PsmsEnv):
         else:
             return [0, 0, 0, 1]
 
+    def distance_point_to_line(self, point, line_start, line_end):
+        """
+        Calculate the distance from a point to a line defined by two points.
         
+        Parameters:
+        - point: The point (PSM position) as a numpy array [x, y, z].
+        - line_start: The start point of the line (cylinder axis) as a numpy array [x, y, z].
+        - line_end: The end point of the line (cylinder axis) as a numpy array [x, y, z].
+        
+        Returns:
+        - distance: The distance from the point to the line.
+        """
+        line_vec = line_end - line_start
+        point_vec = point - line_start
+        cross_product = np.cross(line_vec, point_vec)
+        distance = np.linalg.norm(cross_product) / np.linalg.norm(line_vec)
+        return distance
+    
+    def nearest_cylinder(self):
+        """ Returns the start and end points of the nearest cylinder to 
+        PSM1 and PSM2 respectively.
+        
+        Returns (start1, end1), (start2, end2)
+        """
+        psm1_pos = self._get_robot_state(0)[0:3]
+        psm2_pos = self._get_robot_state(1)[0:3]
+        
+        min_distance_psm1 = 100 # Simply set 100 as MAX number which is impossible to achieve
+        cylinder_psm1 = 0
+        min_distance_psm2 = 100
+        cylinder_psm2 = 0
+        for i, (start, end) in enumerate(self._cylinders_start_end):
+            distance = self.distance_point_to_line(psm1_pos, start, end)
+            if min_distance_psm1 > distance:
+                min_distance_psm1 = distance
+                cylinder_psm1 = i
+            
+            distance = self.distance_point_to_line(psm2_pos, start, end)
+            if min_distance_psm2 > distance:
+                min_distance_psm2 = distance
+                cylinder_psm2 = i
+        
+        return self._cylinders_start_end[cylinder_psm1], self._cylinders_start_end[cylinder_psm2]
+    
+    def closest_point_on_axis(A, B, P):
+        # Convert points to tuples or lists with three coordinates
+        ax, ay, az = A
+        bx, by, bz = B
+        px, py, pz = P
+
+        # Compute vector AB
+        ab = (bx - ax, by - ay, bz - az)
+        # Compute vector AP
+        ap = (px - ax, py - ay, pz - az)
+
+        # Calculate the dot product of AB and AP
+        dot_ab_ap = ab[0] * ap[0] + ab[1] * ap[1] + ab[2] * ap[2]
+        # Calculate the squared magnitude of AB
+        ab_squared = ab[0]**2 + ab[1]**2 + ab[2]**2
+
+        if ab_squared == 0:
+            raise ValueError("Points A and B coincide; the line is undefined.")
+
+        # Compute the parameter t
+        t = dot_ab_ap / ab_squared
+
+        # Calculate the closest point Q
+        qx = ax + t * ab[0]
+        qy = ay + t * ab[1]
+        qz = az + t * ab[2]
+
+        return np.array([qx, qy, qz])
+    
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
         pose = get_link_pose(self.obj_id, -1)

@@ -132,7 +132,7 @@ class BiPegBoard(PsmsEnv):
         # front
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(-0.05 * self.SCALING, 0, 0.395 * self.SCALING),
-            distance=0.85 * self.SCALING,
+            distance=0.82 * self.SCALING,
             yaw=90,
             pitch=-30,
             roll=0,
@@ -145,7 +145,7 @@ class BiPegBoard(PsmsEnv):
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(0.55 * self.SCALING,
                                   -0.52 * self.SCALING, 0.395 * self.SCALING),
-            distance=0.85 * self.SCALING,
+            distance=0.82 * self.SCALING,
             yaw=180,
             pitch=-30,
             roll=0,
@@ -158,7 +158,7 @@ class BiPegBoard(PsmsEnv):
         goal = np.array(get_link_pose(self.obj_ids['fixed'][-1], 1)[0])
         _view_matrix = p.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=(goal[0], goal[1], 0.05 * self.SCALING),
-            distance=0.85 * self.SCALING,
+            distance=0.82 * self.SCALING,
             yaw=90,
             pitch=-90,
             roll=0,
