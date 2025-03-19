@@ -461,7 +461,7 @@ class BiPegTransfer(PsmsEnv):
         
         return self._cylinders_start_end[cylinder_psm1], self._cylinders_start_end[cylinder_psm2]
     
-    def closest_point_on_axis(A, B, P):
+    def closest_point_on_axis(self, A, B, P):
         # Convert points to tuples or lists with three coordinates
         ax, ay, az = A
         bx, by, bz = B
