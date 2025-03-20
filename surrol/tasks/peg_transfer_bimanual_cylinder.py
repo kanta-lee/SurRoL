@@ -233,13 +233,17 @@ class BiPegTransfer(PsmsEnv):
         psm1_count = 0
         psm2_count = 0
 
-        for i, waypoint in enumerate(self._waypoints):
+        # create our own guidance trajectory
+        self.guidance_traj_psm1 = [self._waypoints[6], self._waypoints[11]]
+        self.guidance_traj_psm2 = [self._waypoints[2], self._waypoints[4]]
+
+        for i, waypoint in enumerate(self.guidance_traj_psm1):
             # ---------------------------- PSM 1 ---------------------------
             if i == 0:
                 start_point = self._get_robot_state(0)[0:3]
                 end_point = waypoint[0:3]  # Next PSM1's position
             else:
-                start_point = self._waypoints[i - 1][0:3]
+                start_point = self.guidance_traj_psm1[i - 1][0:3]
                 end_point = waypoint[0:3]
             
             # Calculate the midpoint and the height of the cylinder
@@ -314,13 +318,15 @@ class BiPegTransfer(PsmsEnv):
                 
                 # Store points for distance calculation
                 self._cylinders_start_end.append((start_point, end_point))
+
+        for i, waypoint in enumerate(self.guidance_traj_psm2):
             # ---------------------------- PSM 2 ---------------------------
             
             if i == 0:
                 start_point = self._get_robot_state(1)[0:3]
                 end_point = waypoint[5:8]  # Next PSM1's position
             else:
-                start_point = self._waypoints[i - 1][5:8]
+                start_point = self.guidance_traj_psm2[i - 1][5:8]
                 end_point = waypoint[5:8]
             
             # Calculate the midpoint and the height of the cylinder
