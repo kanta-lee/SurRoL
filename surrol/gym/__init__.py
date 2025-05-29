@@ -21,7 +21,7 @@ register(
 )
 
 register(
-    id='NeedlePick-Liver',
+    id='NeedlePick-v1',
     entry_point='surrol.tasks.needle_pick_liver:NeedlePick',
     max_episode_steps=50,
 )
