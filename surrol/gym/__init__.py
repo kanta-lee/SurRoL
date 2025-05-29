@@ -21,6 +21,12 @@ register(
 )
 
 register(
+    id='NeedlePick-Liver',
+    entry_point='surrol.tasks.needle_pick_liver:NeedlePick',
+    max_episode_steps=50,
+)
+
+register(
     id='PegTransfer-v0',
     entry_point='surrol.tasks.peg_transfer:PegTransfer',
     max_episode_steps=50,
