@@ -67,6 +67,12 @@ class PsmEnv(SurRoLGoalEnv):
         # gripper
         self.block_gripper = True
         self._activated = -1
+        
+        # NOTE: Set to this True to add psm_tool_pitch_link position to the state
+        #       for training neural ODE.
+        #       
+        #       Need to set back to false.
+        self.train_cbf = False
 
         super(PsmEnv, self).__init__(render_mode)
 
@@ -270,6 +276,11 @@ class PsmEnv(SurRoLGoalEnv):
             robot_state, object_pos.ravel(), object_rel_pos.ravel(),
             waypoint_pos.ravel(), waypoint_rot.ravel()  # achieved_goal.copy(),
         ])
+        
+        if self.train_cbf:
+            tool_pitch_pos = np.array(get_link_pose(self.psm1.body, 4)[0])
+            observation = np.concatenate([observation, tool_pitch_pos.ravel()])
+        
         obs = {
             'observation': observation.copy(),
             'achieved_goal': achieved_goal.copy(),
