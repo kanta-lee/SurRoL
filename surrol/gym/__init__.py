@@ -3,6 +3,12 @@ from gym.envs.registration import register
 
 # PSM Env
 register(
+    id='Hemipuncture-v0',
+    entry_point='surrol.tasks.hemipuncture:Hemipuncture',
+    max_episode_steps=100,
+)
+
+register(
     id='NeedleReach-v0',
     entry_point='surrol.tasks.needle_reach:NeedleReach',
     max_episode_steps=50,
@@ -39,20 +45,36 @@ register(
 )
 
 register(
+    id='Reach-v0',
+    entry_point='surrol.tasks.reach_hemisphere:Reach',
+    max_episode_steps=100,
+)
+
+register(
     id='GauzeRetrieve-v0',
     entry_point='surrol.tasks.gauze_retrieve:GauzeRetrieve',
     max_episode_steps=50,
 )
 register(
     id='GauzeRetrieve-v1',
-    entry_point='surrol.tasks.gauze_retrieve_sphere_obstacle:GauzeRetrieve',
+    entry_point='surrol.tasks.gauze_retrieve_liver:GauzeRetrieve',
     max_episode_steps=100,
 )
 register(
     id='GauzeRetrieve-v2',
-    entry_point='surrol.tasks.gauze_retrieve_surface_obstacle:GauzeRetrieve',
+    entry_point='surrol.tasks.gauze_retrieve_sphere:GauzeRetrieve',
     max_episode_steps=100,
 )
+# register(
+#     id='GauzeRetrieve-v1',
+#     entry_point='surrol.tasks.gauze_retrieve_sphere_obstacle:GauzeRetrieve',
+#     max_episode_steps=100,
+# )
+# register(
+#     id='GauzeRetrieve-v2',
+#     entry_point='surrol.tasks.gauze_retrieve_surface_obstacle:GauzeRetrieve',
+#     max_episode_steps=100,
+# )
 register(
     id='GauzeRetrieve-v3',
     entry_point='surrol.tasks.gauze_retrieve_plate_obstacle:GauzeRetrieve',
@@ -77,23 +99,38 @@ register(
 register(
     id='NeedlePick-v0',
     entry_point='surrol.tasks.needle_pick:NeedlePick',
-    max_episode_steps=50,
+    max_episode_steps=100,
 )
 register(
     id='NeedlePick-v1',
-    entry_point='surrol.tasks.needle_pick_sphere_obstacle:NeedlePick',
+    entry_point='surrol.tasks.needle_pick_liver:NeedlePick',
     max_episode_steps=100,
 )
 register(
     id='NeedlePick-v2',
-    entry_point='surrol.tasks.needle_pick_surface_obstacle:NeedlePick',
+    entry_point='surrol.tasks.needle_pick_sphere:NeedlePick',
     max_episode_steps=100,
 )
 register(
     id='NeedlePick-v3',
-    entry_point='surrol.tasks.needle_pick_plate_obstacle:NeedlePick',
+    entry_point='surrol.tasks.needle_pick_hemisphere:NeedlePick',
     max_episode_steps=100,
 )
+# register(
+#     id='NeedlePick-v1',
+#     entry_point='surrol.tasks.needle_pick_sphere_obstacle:NeedlePick',
+#     max_episode_steps=100,
+# )
+# register(
+#     id='NeedlePick-v2',
+#     entry_point='surrol.tasks.needle_pick_surface_obstacle:NeedlePick',
+#     max_episode_steps=100,
+# )
+# register(
+#     id='NeedlePick-v3',
+#     entry_point='surrol.tasks.needle_pick_plate_obstacle:NeedlePick',
+#     max_episode_steps=100,
+# )
 register(
     id='NeedlePick-v4',
     entry_point='surrol.tasks.needle_pick_half_sphere_obstacle:NeedlePick',
