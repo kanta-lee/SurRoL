@@ -45,16 +45,26 @@ class NeedlePick(PsmEnv):
                             globalScaling=self.SCALING)
         self.obj_ids['fixed'].append(obj_id)  # 1
 
-        # needle
+        # needle 
+        # workspace_limits = ((2.5, 3), (-0.25, 0.25), (3.476, 3.776))
         yaw = (np.random.rand() - 0.5) * np.pi
+        # obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
+        #                     (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,  # TODO: scaling
+        #                      workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
+        #                      workspace_limits[2][0] + 0.01),
+        #                     p.getQuaternionFromEuler((0, 0, yaw)),
+        #                     useFixedBase=False,
+        #                     globalScaling=self.SCALING)
+        
+        needle_radius = 0.1
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
-                            (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,  # TODO: scaling
-                             workspace_limits[1].mean() + \
-                             (np.random.rand() - 0.5) * 0.1,
+                            (np.random.uniform(workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius),  # TODO: scaling
+                             np.random.uniform(workspace_limits[1][0] + needle_radius, workspace_limits[1][1] - needle_radius),
                              workspace_limits[2][0] + 0.01),
                             p.getQuaternionFromEuler((0, 0, yaw)),
                             useFixedBase=False,
                             globalScaling=self.SCALING)
+        
         p.changeVisualShape(obj_id, -1, specularColor=(80, 80, 80))
         self.obj_ids['rigid'].append(obj_id)  # 0
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], 1
@@ -63,10 +73,13 @@ class NeedlePick(PsmEnv):
         """ Samples a new goal and returns it.
         """
         workspace_limits = self.workspace_limits1
-        goal = np.array([workspace_limits[0].mean() + 0.01 * np.random.randn() * self.SCALING,
-                         workspace_limits[1].mean() + 0.01 *
-                         np.random.randn() * self.SCALING,
-                         workspace_limits[2][1] - 0.04 * self.SCALING])
+        # goal = np.array([workspace_limits[0].mean() + 0.01 * np.random.randn() * self.SCALING,
+        #                  workspace_limits[1].mean() + 0.01 * np.random.randn() * self.SCALING,
+        #                  workspace_limits[2][1] - 0.04 * self.SCALING])
+        
+        goal = np.array([np.random.uniform(workspace_limits[0][0], workspace_limits[0][1]),
+                         np.random.uniform(workspace_limits[1][0], workspace_limits[1][1]),
+                         np.random.uniform(workspace_limits[2][0] + 0.01, workspace_limits[2][1] - 0.01)])
         return goal.copy()
 
     def _sample_goal_callback(self):
