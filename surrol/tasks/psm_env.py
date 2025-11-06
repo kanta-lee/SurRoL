@@ -476,6 +476,48 @@ class PsmEnv(SurRoLGoalEnv):
         Define a scripted oracle strategy
         """
         raise NotImplementedError
+    
+    def draw_workspace_box(self, limits, color=[0, 0, 1], line_width=1, lifetime=0):
+        """
+        Draw a bounding box for workspace limits in PyBullet
+        
+        Args:
+            limits: ((x_min, x_max), (y_min, y_max), (z_min, z_max))
+            color: [r, g, b] line color
+            line_width: width of the lines
+            lifetime: 0 for permanent, >0 for temporary in seconds
+        """
+        x_min, x_max = limits[0]
+        y_min, y_max = limits[1] 
+        z_min, z_max = limits[2]
+        
+        # Define the 8 corners of the box
+        corners = [
+            [x_min, y_min, z_min], [x_max, y_min, z_min],
+            [x_min, y_max, z_min], [x_max, y_max, z_min],
+            [x_min, y_min, z_max], [x_max, y_min, z_max],
+            [x_min, y_max, z_max], [x_max, y_max, z_max]
+        ]
+        
+        # Define the 12 edges of the box
+        edges = [
+            # Bottom face (z_min)
+            (0, 1), (0, 2), (1, 3), (2, 3),
+            # Top face (z_max)
+            (4, 5), (4, 6), (5, 7), (6, 7),
+            # Vertical edges
+            (0, 4), (1, 5), (2, 6), (3, 7)
+        ]
+        
+        # Draw all edges
+        line_ids = []
+        for edge in edges:
+            start_pos = corners[edge[0]]
+            end_pos = corners[edge[1]]
+            line_id = p.addUserDebugLine(start_pos, end_pos, color, line_width, lifetime)
+            line_ids.append(line_id)
+        
+        return line_ids
 
 
 class PsmsEnv(PsmEnv):

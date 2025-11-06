@@ -59,8 +59,6 @@ class NeedlePickCylinder(PsmEnv):
                             globalScaling=self.SCALING)
         self.obj_ids['fixed'].append(obj_id)  # 1
         
-        self.draw_workspace_box(workspace_limits, color=[0, 0, 1])
-        
         # ==============================================================================
         #                                   LIVER
         # ==============================================================================
