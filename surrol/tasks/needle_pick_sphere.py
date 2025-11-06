@@ -9,9 +9,10 @@ from surrol.utils.pybullet_utils import (
     wrap_angle
 )
 from surrol.const import ASSET_DIR_PATH
+from typing import Tuple
 
 
-class NeedlePick(PsmEnv):
+class NeedlePickSphere(PsmEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
     WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.685, 0.745))  # reduce tip pad contact
     SCALING = 5.
@@ -33,7 +34,7 @@ class NeedlePick(PsmEnv):
     REMOTE_CENTER_LINK = 13
 
     def _env_setup(self):
-        super(NeedlePick, self)._env_setup()
+        super(NeedlePickSphere, self)._env_setup()
         # np.random.seed(4)  # for experiment reproduce
         self.has_object = True
         self._waypoint_goal = True
@@ -67,21 +68,20 @@ class NeedlePick(PsmEnv):
             workspace_limits[2][0] + sphere_radius - 0.03
         ]
         
-        
         sphere_visual_id = p.createVisualShape(
             p.GEOM_SPHERE, 
             radius=sphere_radius, 
             rgbaColor=[0, 1, 0, 0.3]
         )
 
-        sphere_id = p.createMultiBody(
+        self.sphere_id = p.createMultiBody(
             baseMass=0,
             baseVisualShapeIndex=sphere_visual_id,
             basePosition=sphere_pos,
             baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
         )
         
-        self.obj_ids['obstacle'].append(sphere_id)  # 0
+        self.obj_ids['obstacle'].append(self.sphere_id)  # 0
         
         # ==============================================================================
         #                                   NEEDLE
@@ -92,13 +92,43 @@ class NeedlePick(PsmEnv):
         # y - 0.1 <= aabb_min
         # workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,  # TODO: scaling
         needle_radius = 0.1
-        # yaw = 1.5 * np.pi
-        yaw = (np.random.rand() - 0.5) * np.pi
-        offset = 0.07
+        offset = 0.05
+        yaw = 0 # Just to initialize
+        
+        needle_ranges = np.array((
+            (workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius), # [2.6, 2.9]
+            (workspace_limits[1][0], sphere_pos[1] - sphere_radius - offset), # [-0.25, -0.13]
+            (workspace_limits[2][0], workspace_limits[2][1])
+        ))
+        
+        # self.draw_workspace_box(needle_ranges, color=[1, 0, 0])
+        # self.draw_workspace_box(np.array(workspace_limits))
+        
+        while True:
+            needle_pos = (
+                np.random.uniform(needle_ranges[0][0], needle_ranges[0][1]),
+                np.random.uniform(needle_ranges[1][0], needle_ranges[1][1]),
+                workspace_limits[2][0] + 0.01
+            )
+            
+            yaw = (np.random.rand() - 0.5) * np.pi
+            
+            pick_up_pos = (
+                needle_pos[0] - needle_radius * np.cos(yaw),
+                needle_pos[1] - needle_radius * np.sin(yaw),
+                needle_pos[2]
+            )
+            
+            x, y, _ = pick_up_pos
+            x_min, x_max = workspace_limits[0][0], workspace_limits[0][1]
+            y_min, y_max = workspace_limits[1][0], needle_ranges[1][1]
+            
+            if (x_min <= x <= x_max and y_min <= y <= y_max):
+                break
+        
+        # offset = 0.07
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
-                            (np.random.uniform(workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius),
-                             np.random.uniform(workspace_limits[1][0], sphere_pos[1] - sphere_radius - needle_radius - offset),
-                             workspace_limits[2][0] + 0.01),
+                            needle_pos,
                             p.getQuaternionFromEuler((0, 0, yaw)),
                             useFixedBase=False,
                             globalScaling=self.SCALING)
@@ -156,7 +186,6 @@ class NeedlePick(PsmEnv):
             weighted_mp,
             (0, 0, 0, 1))
 
-
     def _sample_goal_callback(self):
         """ Define waypoints
         """
@@ -203,15 +232,14 @@ class NeedlePick(PsmEnv):
         """
         Define a human expert strategy
         """
-        psm_pos = self._get_robot_state(0)[0:3]
-        weighted_mp = psm_pos + 0.1 * (self.remote_center - psm_pos)
+        # psm_pos = self._get_robot_state(0)[0:3]
+        # weighted_mp = psm_pos + 0.1 * (self.remote_center - psm_pos)
         
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['rigid'][1],
-            weighted_mp,
-            (0, 0, 0, 1)
-        )
-        
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['rigid'][1],
+        #     weighted_mp,
+        #     (0, 0, 0, 1)
+        # )
         
         # four waypoints executed in sequential order
         action = np.zeros(5)
@@ -231,10 +259,29 @@ class NeedlePick(PsmEnv):
             break
 
         return action
-
+    
+    def check_collision(self):
+        psm_pos = self._get_robot_state(0)[0:3]
+        center, _ = p.getBasePositionAndOrientation(self.sphere_id)
+        radius = p.getVisualShapeData(self.sphere_id)[0][3][0]
+        b = np.sum((center - psm_pos) ** 2) - radius ** 2
+        return b <= 0
+    
+    def get_sphere_prop(self) -> Tuple[np.ndarray, float]:
+        """
+        Retrieves the properties of the sphere obstacle.
+        
+        Returns:
+            A tuple containing the sphere's center and radius.
+            - center (np.ndarray): The center coordinates of the sphere.
+            - radius (float): The radius of the sphere.
+        """
+        center, _ = p.getBasePositionAndOrientation(self.sphere_id)
+        radius = p.getVisualShapeData(self.sphere_id)[0][3][0]
+        return np.array(center), radius
 
 if __name__ == "__main__":
-    env = NeedlePick(render_mode='human')  # create one process and corresponding env
+    env = NeedlePickSphere(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

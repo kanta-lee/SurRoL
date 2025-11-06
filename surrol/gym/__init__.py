@@ -57,12 +57,12 @@ register(
 )
 register(
     id='GauzeRetrieve-v1',
-    entry_point='surrol.tasks.gauze_retrieve_liver:GauzeRetrieve',
+    entry_point='surrol.tasks.gauze_retrieve_liver:GauzeRetrieveCylinder',
     max_episode_steps=100,
 )
 register(
     id='GauzeRetrieve-v2',
-    entry_point='surrol.tasks.gauze_retrieve_sphere:GauzeRetrieve',
+    entry_point='surrol.tasks.gauze_retrieve_sphere:GauzeRetrieveSphere',
     max_episode_steps=100,
 )
 # register(
@@ -103,12 +103,12 @@ register(
 )
 register(
     id='NeedlePick-v1',
-    entry_point='surrol.tasks.needle_pick_liver:NeedlePick',
+    entry_point='surrol.tasks.needle_pick_liver:NeedlePickCylinder',
     max_episode_steps=100,
 )
 register(
     id='NeedlePick-v2',
-    entry_point='surrol.tasks.needle_pick_sphere:NeedlePick',
+    entry_point='surrol.tasks.needle_pick_sphere:NeedlePickSphere',
     max_episode_steps=100,
 )
 register(

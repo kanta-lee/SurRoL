@@ -9,9 +9,11 @@ from surrol.utils.pybullet_utils import (
     wrap_angle
 )
 from surrol.const import ASSET_DIR_PATH
+from scipy.spatial.transform import Rotation
+from typing import Tuple
 
 
-class NeedlePick(PsmEnv):
+class NeedlePickCylinder(PsmEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
     WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.685, 0.745))  # reduce tip pad contact
     SCALING = 5.
@@ -33,7 +35,7 @@ class NeedlePick(PsmEnv):
     REMOTE_CENTER_LINK = 13
 
     def _env_setup(self):
-        super(NeedlePick, self)._env_setup()
+        super(NeedlePickCylinder, self)._env_setup()
         # np.random.seed(4)  # for experiment reproduce
         self.has_object = True
         self._waypoint_goal = True
@@ -56,6 +58,8 @@ class NeedlePick(PsmEnv):
                             p.getQuaternionFromEuler(self.POSE_TRAY[1]),
                             globalScaling=self.SCALING)
         self.obj_ids['fixed'].append(obj_id)  # 1
+        
+        self.draw_workspace_box(workspace_limits, color=[0, 0, 1])
         
         # ==============================================================================
         #                                   LIVER
@@ -154,7 +158,7 @@ class NeedlePick(PsmEnv):
             rgbaColor=[0, 1, 0, 0.3]
         )
 
-        cylinder_id = p.createMultiBody(
+        self.cylinder_id = p.createMultiBody(
             baseMass=0,
             baseVisualShapeIndex=cylinder_visual_id,
             basePosition=(
@@ -165,7 +169,7 @@ class NeedlePick(PsmEnv):
             baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
         )
         
-        self.obj_ids['obstacle'].append(cylinder_id)  # 0
+        self.obj_ids['obstacle'].append(self.cylinder_id)  # 0
         
         # ==============================================================================
         #                                   NEEDLE
@@ -178,10 +182,40 @@ class NeedlePick(PsmEnv):
         needle_radius = 0.1
         offset = 0.05
         yaw = 1.5 * np.pi
+        
+        needle_ranges = np.array((
+            (workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius), # [2.6, 2.9]
+            (workspace_limits[1][0], (liver_pos[1] + center_y) - cylinder_radius - offset), # [-0.25, -0.138475805]
+            (workspace_limits[2][0], workspace_limits[2][1])
+        ))
+        
+        # self.draw_workspace_box(np.array(workspace_limits))
+        # self.draw_workspace_box(needle_ranges, color=[1, 0, 0])
+        
+        while True:
+            needle_pos = (
+                np.random.uniform(needle_ranges[0][0], needle_ranges[0][1]),
+                np.random.uniform(needle_ranges[1][0], needle_ranges[1][1]),
+                workspace_limits[2][0] + 0.01
+            )
+            
+            yaw = (np.random.rand() - 0.5) * np.pi
+            
+            pick_up_pos = (
+                needle_pos[0] - needle_radius * np.cos(yaw),
+                needle_pos[1] - needle_radius * np.sin(yaw),
+                needle_pos[2]
+            )
+            
+            x, y, _ = pick_up_pos
+            x_min, x_max = workspace_limits[0][0], workspace_limits[0][1]
+            y_min, y_max = workspace_limits[1][0], needle_ranges[1][1]
+            
+            if (x_min <= x <= x_max and y_min <= y <= y_max):
+                break
+        
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'needle/needle_40mm.urdf'),
-                            (np.random.uniform(workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius),
-                             np.random.uniform(workspace_limits[1][0], (liver_pos[1] + center_y) - cylinder_radius - needle_radius - offset),
-                             workspace_limits[2][0] + 0.01),
+                            needle_pos,
                             p.getQuaternionFromEuler((0, 0, yaw)),
                             useFixedBase=False,
                             globalScaling=self.SCALING)
@@ -312,10 +346,68 @@ class NeedlePick(PsmEnv):
             break
 
         return action
+    
+    def get_cylinder_prop(self) -> Tuple[np.ndarray, np.ndarray, float, float]:
+        """
+        Retrieves the properties of the cylinder obstacle.
+        
+        Returns:
+            A tuple containing the cylinder's center, axis, length, and radius.
+            - cyl_center (np.ndarray): The center coordinates of the cylinder.
+            - cyl_axis (np.ndarray): The orientation vector of the cylinder's axis.
+            - cyl_length (float): The length of the cylinder.
+            - cyl_radius (float): The radius of the cylinder.
+        """
+        cyl_center, cyl_orn = p.getBasePositionAndOrientation(self.cylinder_id)
+        cyl_dimensions = p.getVisualShapeData(self.cylinder_id)[0][3]
+        cyl_length, cyl_radius = cyl_dimensions[0], cyl_dimensions[1]
+        rotation_matrix = Rotation.from_quat(np.array(cyl_orn)).as_matrix()
+        cyl_axis = (rotation_matrix @ np.array([0, 0, 1]).reshape([3, 1])).reshape(-1)
+        assert abs(np.linalg.norm(cyl_axis) - 1.0) < 1e-6, "Cylinder axis is not a unit vector."
+        return np.array(cyl_center), cyl_axis, cyl_length, cyl_radius
+    
+    def check_collision(self):
+        center, orn = p.getBasePositionAndOrientation(self.cylinder_id)
+        rotation_matrix = Rotation.from_quat(np.array(orn)).as_matrix()
+        axis_vector = np.array([0, 0, 1]).reshape([3, 1])
+        axis_vector = (rotation_matrix @ axis_vector).reshape(-1).tolist()
+        robot = self._get_robot_state(0)[0:3]
+        
+        # Actually should divide by norm(axis_vector)
+        # Since it is 1, so doesn't matter
+        projected_length = np.dot(axis_vector, robot - np.array(center))
+        
+        # p.getVisualShapeData() return a list of tuples
+        # (objectUniqueId, linkIndex, geometryType, dimensions, localFramePosition, localFrameOrientation, rgbaColor)
+        dimensions = p.getVisualShapeData(self.cylinder_id)[0][3]
+        length, radius = dimensions[0], dimensions[1]
+        
+        # Check whether it is in the range of cylinder's length
+        if projected_length ** 2 <= (length / 2) ** 2:
+            # Check whether it is in the range of cylinder's radius
+            proj_vec = projected_length * np.array(axis_vector)
+            norm_vec = np.array(robot) - (np.array(center) + proj_vec)
+            violate_constraint = (np.sum(norm_vec ** 2) - radius ** 2 <= 0)
+        else:
+            # Check collision condition for the PSM stick
+            remote_center = self.remote_center
+            weighted_mp = robot + 0.1 * (remote_center - robot)
+            projected_length = np.dot(axis_vector, weighted_mp - np.array(center))
+            
+            # Check whether it is in the range of cylinder's length
+            if projected_length ** 2 <= (length / 2 + 0.025) ** 2:
+                # Check whether it is in the range of cylinder's radius
+                proj_vec = projected_length * np.array(axis_vector)
+                norm_vec = weighted_mp - (np.array(center) + proj_vec)
+                violate_constraint = (np.sum(norm_vec ** 2) - (radius + 0.025) ** 2 <= 0)
+            else:
+                violate_constraint = False
+                
+        return violate_constraint
 
 
 if __name__ == "__main__":
-    env = NeedlePick(render_mode='human')  # create one process and corresponding env
+    env = NeedlePickCylinder(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

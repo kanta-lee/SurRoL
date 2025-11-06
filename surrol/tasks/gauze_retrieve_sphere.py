@@ -8,9 +8,10 @@ from surrol.utils.pybullet_utils import (
     get_link_pose,
 )
 from surrol.const import ASSET_DIR_PATH
+from typing import Tuple
 
 
-class GauzeRetrieve(PsmEnv):
+class GauzeRetrieveSphere(PsmEnv):
     """
     Refer to Gym FetchPickAndPlace
     https://github.com/openai/gym/blob/master/gym/envs/robotics/fetch/pick_and_place.py
@@ -23,7 +24,7 @@ class GauzeRetrieve(PsmEnv):
     # TODO: grasp is sometimes not stable; check how to fix it
 
     def _env_setup(self):
-        super(GauzeRetrieve, self)._env_setup()
+        super(GauzeRetrieveSphere, self)._env_setup()
         self.has_object = True
         self._waypoint_goal = True
         # self._contact_approx = True  # mimic the dVRL setting, prove nothing?
@@ -57,21 +58,20 @@ class GauzeRetrieve(PsmEnv):
             workspace_limits[2][0] + sphere_radius - 0.03
         ]
         
-        
         sphere_visual_id = p.createVisualShape(
             p.GEOM_SPHERE, 
             radius=sphere_radius, 
             rgbaColor=[0, 1, 0, 0.3]
         )
 
-        sphere_id = p.createMultiBody(
+        self.sphere_id = p.createMultiBody(
             baseMass=0,
             baseVisualShapeIndex=sphere_visual_id,
             basePosition=sphere_pos,
             baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
         )
-        
-        self.obj_ids['obstacle'].append(sphere_id)  # 0
+
+        self.obj_ids['obstacle'].append(self.sphere_id)  # 0
         
         # ==============================================================================
         #                                   GAUZE
@@ -95,10 +95,17 @@ class GauzeRetrieve(PsmEnv):
         aabb_min, aabb_max = get_scaled_obb(obj_path, self.SCALING)
         self.dimensions = np.array(aabb_max) - np.array(aabb_min)
         
-        offset = 0.05
+        gauze_ranges = np.array((
+            (workspace_limits[0][0] + self.dimensions[0] / 2, workspace_limits[0][1] - self.dimensions[0] / 2),
+            (workspace_limits[1][0], sphere_pos[1] - sphere_radius - self.dimensions[1] / 2),
+            (workspace_limits[2][0], workspace_limits[2][1])
+        ))
+        # self.draw_workspace_box(np.array(workspace_limits))
+        # self.draw_workspace_box(gauze_ranges, color=[1, 0, 0])
+        
         obj_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'gauze/gauze.urdf'),
-                            (np.random.uniform(workspace_limits[0][0] + self.dimensions[0] / 2 , workspace_limits[0][1] - self.dimensions[0] / 2),
-                             np.random.uniform(workspace_limits[1][0] + self.dimensions[1] / 2, sphere_pos[1] - sphere_radius - self.dimensions[1] / 2 - offset),
+                            (np.random.uniform(gauze_ranges[0][0], gauze_ranges[0][1]),
+                             np.random.uniform(gauze_ranges[1][0], gauze_ranges[1][1]),
                              workspace_limits[2][0] + 0.01),
                             (0, 0, 0, 1),
                             useFixedBase=False,
@@ -132,7 +139,7 @@ class GauzeRetrieve(PsmEnv):
 
     def _set_action(self, action: np.ndarray):
         action[3] = 0  # no yaw change
-        super(GauzeRetrieve, self)._set_action(action)
+        super(GauzeRetrieveSphere, self)._set_action(action)
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -204,10 +211,30 @@ class GauzeRetrieve(PsmEnv):
             break
 
         return action
+    
+    def check_collision(self):
+        psm_pos = self._get_robot_state(0)[0:3]
+        center, _ = p.getBasePositionAndOrientation(self.sphere_id)
+        radius = p.getVisualShapeData(self.sphere_id)[0][3][0]
+        b = np.sum((center - psm_pos) ** 2) - radius ** 2
+        return b <= 0
+    
+    def get_sphere_prop(self) -> Tuple[np.ndarray, float]:
+        """
+        Retrieves the properties of the sphere obstacle.
+        
+        Returns:
+            A tuple containing the sphere's center and radius.
+            - center (np.ndarray): The center coordinates of the sphere.
+            - radius (float): The radius of the sphere.
+        """
+        center, _ = p.getBasePositionAndOrientation(self.sphere_id)
+        radius = p.getVisualShapeData(self.sphere_id)[0][3][0]
+        return np.array(center), radius
 
 
 if __name__ == "__main__":
-    env = GauzeRetrieve(render_mode='human')  # create one process and corresponding env
+    env = GauzeRetrieveSphere(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()
