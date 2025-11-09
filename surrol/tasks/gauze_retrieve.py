@@ -57,6 +57,15 @@ class GauzeRetrieve(PsmEnv):
         self.obj_ids['rigid'].append(obj_id)  # 0
         self.obj_id, self.obj_link1 = self.obj_ids['rigid'][0], -1
 
+        # gauze_ranges = np.array((
+        #     (workspace_limits[0].mean() - 0.05, workspace_limits[0].mean() + 0.05),
+        #     (workspace_limits[1].mean() - 0.05, workspace_limits[1].mean() + 0.05),
+        #     (workspace_limits[2][0] + 0.01, workspace_limits[2][0] + 0.009)
+        # ))
+
+        # self.draw_workspace_box(np.array(workspace_limits))
+        # self.draw_workspace_box(gauze_ranges, color=[1, 1, 0])
+
     def _set_action(self, action: np.ndarray):
         action[3] = 0  # no yaw change
         super(GauzeRetrieve, self)._set_action(action)
@@ -65,6 +74,16 @@ class GauzeRetrieve(PsmEnv):
         """ Samples a new goal and returns it.
         """
         workspace_limits = self.workspace_limits1
+        # std = 0.01 * self.SCALING
+
+        # goal_ranges = np.array((
+        #     (workspace_limits[0].mean() + 2 * std * -2.576, workspace_limits[0].mean() + 2 * std * 2.576),
+        #     (workspace_limits[1].mean() + 2 * std * -2.576, workspace_limits[1].mean() + 2 * std * 2.576),
+        #     (workspace_limits[2][1] - 0.03 * self.SCALING, workspace_limits[2][1] - 0.029 * self.SCALING) # Drawing purpose
+        # ))
+
+        # self.draw_workspace_box(goal_ranges, color=[1, 0, 0])
+
         goal = np.array([workspace_limits[0].mean() + 0.02 * np.random.randn() * self.SCALING,
                          workspace_limits[1].mean() + 0.02 * np.random.randn() * self.SCALING,
                          workspace_limits[2][1] - 0.03 * self.SCALING])

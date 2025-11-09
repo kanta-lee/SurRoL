@@ -8,10 +8,11 @@ from surrol.utils.pybullet_utils import (
     get_link_pose,
 )
 from surrol.const import ASSET_DIR_PATH
+from scipy.spatial.transform import Rotation
 from typing import Tuple
 
 
-class GauzeRetrieveSphere(PsmEnv):
+class GauzeRetrieveCylinder(PsmEnv):
     """
     Refer to Gym FetchPickAndPlace
     https://github.com/openai/gym/blob/master/gym/envs/robotics/fetch/pick_and_place.py
@@ -24,7 +25,7 @@ class GauzeRetrieveSphere(PsmEnv):
     # TODO: grasp is sometimes not stable; check how to fix it
 
     def _env_setup(self):
-        super(GauzeRetrieveSphere, self)._env_setup()
+        super(GauzeRetrieveCylinder, self)._env_setup()
         self.has_object = True
         self._waypoint_goal = True
         # self._contact_approx = True  # mimic the dVRL setting, prove nothing?
@@ -48,33 +49,35 @@ class GauzeRetrieveSphere(PsmEnv):
         p.changeVisualShape(obj_id, -1, rgbaColor=(225 / 255, 225 / 255, 225 / 255, 1))
         
         # ==============================================================================
-        #                             SPHERE OBSTACLE
+        #                                   CYLINDER
         # ==============================================================================
-        
-        sphere_radius = 0.1
-        sphere_pos = [
-            workspace_limits[0].mean(), 
-            workspace_limits[1].mean(), 
-            workspace_limits[2][0] + sphere_radius - 0.03
-        ]
 
-        self.sphere_id = p.createMultiBody(
-            baseMass=0,
-            baseVisualShapeIndex=p.createVisualShape(
-                p.GEOM_SPHERE, 
-                radius=sphere_radius, 
-                rgbaColor=[0, 1, 0, 0.3]
-            ),
-            basePosition=sphere_pos,
-            baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
+        cyl_radius = 0.1
+        cyl_length = 0.15
+        cyl_pos = (
+            workspace_limits[0].mean(),
+            workspace_limits[1].mean(),
+            workspace_limits[2][0] + 0.045
         )
 
-        self.obj_ids['obstacle'].append(self.sphere_id)  # 0
+        self.cylinder_id = p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=p.createVisualShape(
+                p.GEOM_CYLINDER, 
+                radius=cyl_radius, 
+                length=cyl_length, 
+                rgbaColor=[0, 1, 0, 0.3]
+            ),
+            basePosition=cyl_pos,
+            baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
+        )
+        
+        self.obj_ids['obstacle'].append(self.cylinder_id)  # 0
         
         # ==============================================================================
         #                                   GAUZE
         # ==============================================================================
-        
+
         gauze_ranges = np.array((
             (workspace_limits[0].mean() - 0.05, workspace_limits[0].mean() + 0.05),
             (workspace_limits[1][0], workspace_limits[1][0] + 0.08),
@@ -98,7 +101,7 @@ class GauzeRetrieveSphere(PsmEnv):
 
     def _set_action(self, action: np.ndarray):
         action[3] = 0  # no yaw change
-        super(GauzeRetrieveSphere, self)._set_action(action)
+        super(GauzeRetrieveCylinder, self)._set_action(action)
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -114,12 +117,13 @@ class GauzeRetrieveSphere(PsmEnv):
 
         # self.draw_workspace_box(goal_ranges, color=[1, 0, 0])
 
+        # TODO: Try using uniform?
         goal = np.array([
             np.clip(np.random.normal(goal_ranges[0].mean(), 2 * std), goal_ranges[0][0], goal_ranges[0][1]),
             np.clip(np.random.normal(goal_ranges[1].mean(), 2 * std), goal_ranges[1][0], goal_ranges[1][1]),
             workspace_limits[2][1] - 0.03 * self.SCALING
         ])
-        
+
         return goal.copy()
     
     def _render_callback(self, mode):
@@ -182,35 +186,58 @@ class GauzeRetrieveSphere(PsmEnv):
 
         return action
     
+    def get_cylinder_prop(self) -> Tuple[np.ndarray, np.ndarray, float, float]:
+        """
+        Retrieves the properties of the cylinder obstacle.
+        
+        Returns:
+            A tuple containing the cylinder's center, axis, length, and radius.
+            - cyl_center (np.ndarray): The center coordinates of the cylinder.
+            - cyl_axis (np.ndarray): The orientation vector of the cylinder's axis.
+            - cyl_length (float): The length of the cylinder.
+            - cyl_radius (float): The radius of the cylinder.
+        """
+        cyl_center, cyl_orn = p.getBasePositionAndOrientation(self.cylinder_id)
+        cyl_dimensions = p.getVisualShapeData(self.cylinder_id)[0][3]
+        cyl_length, cyl_radius = cyl_dimensions[0], cyl_dimensions[1]
+        rotation_matrix = Rotation.from_quat(np.array(cyl_orn)).as_matrix()
+        cyl_axis = (rotation_matrix @ np.array([0, 0, 1]).reshape([3, 1])).reshape(-1)
+        assert abs(np.linalg.norm(cyl_axis) - 1.0) < 1e-6, "Cylinder axis is not a unit vector."
+        return np.array(cyl_center), cyl_axis, cyl_length, cyl_radius
+    
     def check_collision(self):
         """
-        Check if the end-effector is inside the sphere.
+        Check if the robot position is inside the cylinder.
         
         Returns:
-            bool: True if end-effector is inside the sphere, False otherwise
+            bool: True if robot is inside the cylinder, False otherwise
         """
+        cyl_center, cyl_axis, cyl_length, cyl_radius = self.get_cylinder_prop()
         psm_pos = self._get_robot_state(0)[0:3]
-        center, radius = self.get_sphere_prop()
-        b = np.sum((center - psm_pos) ** 2) - radius ** 2
-        return b <= 0
-    
-    def get_sphere_prop(self) -> Tuple[np.ndarray, float]:
-        """
-        Retrieves the properties of the sphere obstacle.
         
-        Returns:
-            A tuple containing the sphere's center and radius.
-            - center (np.ndarray): The center coordinates of the sphere.
-            - radius (float): The radius of the sphere.
-        """
-        center, _ = p.getBasePositionAndOrientation(self.sphere_id)
-        radius = p.getVisualShapeData(self.sphere_id)[0][3][0]
-        return np.array(center), radius
+        # Vector from cylinder center to robot position
+        vec_to_psm = psm_pos - cyl_center
+        
+        # Project the vector onto the cylinder axis to find the distance along the axis
+        projection_length = np.dot(vec_to_psm, cyl_axis)
+        
+        # Check if the robot is within the cylinder's length
+        if abs(projection_length) > cyl_length / 2:
+            return False
 
+        # Calculate the perpendicular distance from the axis
+        projection_vector = projection_length * cyl_axis
+        perpendicular_vector = vec_to_psm - projection_vector
+        distance_from_axis = np.linalg.norm(perpendicular_vector)
+        
+        # Check if the robot is within the cylinder's radius
+        if distance_from_axis > cyl_radius:
+            return False
+        
+        return True
 
 if __name__ == "__main__":
-    env = GauzeRetrieveSphere(render_mode='human')  # create one process and corresponding env
-
+    env = GauzeRetrieveCylinder(render_mode='human')  # create one process and corresponding env
     env.test()
     env.close()
     time.sleep(2)
