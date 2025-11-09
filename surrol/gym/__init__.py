@@ -57,7 +57,7 @@ register(
 )
 register(
     id='GauzeRetrieve-v1',
-    entry_point='surrol.tasks.gauze_retrieve_liver:GauzeRetrieveCylinder',
+    entry_point='surrol.tasks.gauze_retrieve_cylinder:GauzeRetrieveCylinder',
     max_episode_steps=100,
 )
 register(
@@ -103,7 +103,7 @@ register(
 )
 register(
     id='NeedlePick-v1',
-    entry_point='surrol.tasks.needle_pick_liver:NeedlePickCylinder',
+    entry_point='surrol.tasks.needle_pick_cylinder:NeedlePickCylinder',
     max_episode_steps=100,
 )
 register(
