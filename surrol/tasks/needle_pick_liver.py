@@ -181,12 +181,22 @@ class NeedlePickCylinder(PsmEnv):
         offset = 0.05
         yaw = 1.5 * np.pi
         
+        # needle_ranges = np.array((
+        #     (workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius), # [2.6, 2.9]
+        #     (workspace_limits[1][0], (liver_pos[1] + center_y) - cylinder_radius - offset), # [-0.25, -0.138475805]
+        #     (workspace_limits[2][0], workspace_limits[2][1])
+        # ))
+        
+        # (workspace_limits[0].mean() + (np.random.rand() - 0.5) * 0.1,  # TODO: scaling
+        #  workspace_limits[1].mean() + (np.random.rand() - 0.5) * 0.1,
+        #  workspace_limits[2][0] + 0.01)
+
         needle_ranges = np.array((
-            (workspace_limits[0][0] + needle_radius, workspace_limits[0][1] - needle_radius), # [2.6, 2.9]
+            (workspace_limits[0].mean() - 0.05, workspace_limits[0].mean() + 0.05), # [2.6, 2.9]
             (workspace_limits[1][0], (liver_pos[1] + center_y) - cylinder_radius - offset), # [-0.25, -0.138475805]
             (workspace_limits[2][0], workspace_limits[2][1])
         ))
-        
+
         # self.draw_workspace_box(np.array(workspace_limits))
         # self.draw_workspace_box(needle_ranges, color=[1, 0, 0])
         
@@ -248,13 +258,31 @@ class NeedlePickCylinder(PsmEnv):
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
         """
+        # goal_ranges = np.array((
+        #     (workspace_limits[0][0] + self.needle_radius, workspace_limits[0][1] - self.needle_radius),
+        #     (self.cylinder_center_y + self.cylinder_radius + self.needle_radius, workspace_limits[1][1]),
+        #     (workspace_limits[2][0] + 0.01, workspace_limits[2][1] - 0.01)
+        # ))
+
+        # goal = np.array([
+        #     np.random.uniform(goal_ranges[0][0], goal_ranges[0][1]),
+        #     np.random.uniform(goal_ranges[1][0], goal_ranges[1][1]),
+        #     np.random.uniform(goal_ranges[2][0], goal_ranges[2][1])
+        # ])
+
         workspace_limits = self.workspace_limits1
-    
-        goal = np.array([
-            np.random.uniform(workspace_limits[0][0] + self.needle_radius, workspace_limits[0][1] - self.needle_radius),
-            np.random.uniform(self.cylinder_center_y + self.cylinder_radius + self.needle_radius, workspace_limits[1][1]),
-            np.random.uniform(workspace_limits[2][0] + 0.01, workspace_limits[2][1] - 0.01)
-        ])
+
+        original_goal_ranges = np.array((
+            (workspace_limits[0].mean() + 0.01 * -2.576 * self.SCALING, workspace_limits[0].mean() + 0.01 * 2.576 * self.SCALING),
+            (workspace_limits[1].mean() + 0.01 * -2.576 * self.SCALING, workspace_limits[1].mean() + 0.01 * 2.576 * self.SCALING),
+            (workspace_limits[2][1] - 0.04 * self.SCALING, workspace_limits[2][1] - 0.03 * self.SCALING)
+        ))
+
+        self.draw_workspace_box(original_goal_ranges, color=[0, 0, 0])
+
+        goal = np.array([workspace_limits[0].mean() + 0.01 * np.random.randn() * self.SCALING,
+                         workspace_limits[1].mean() + 0.01 * np.random.randn() * self.SCALING,
+                         workspace_limits[2][1] - 0.04 * self.SCALING])
         
         return goal.copy()
     
