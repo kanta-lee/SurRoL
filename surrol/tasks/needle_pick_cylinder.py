@@ -287,6 +287,53 @@ class NeedlePickCylinder(PsmEnv):
         
         return True
 
+    # NOTE: Since we want to take more information about the observation, let's
+    #       override the _get_obs method.
+    def _get_obs(self) -> dict:
+        # PSM position and orientation
+        robot_state = self._get_robot_state(idx=0)
+    
+        # NOTE: Base link for needle is a little weird. 
+        #       It is not on the needle itself.
+        pos, _ = get_link_pose(self.obj_id, -1)
+        object_pos = np.array(pos)
+
+        # Center of the needle (self.obj_link1 = 1)
+        pos, orn = get_link_pose(self.obj_id, self.obj_link1)
+        waypoint_pos = np.array(pos)
+        # rotations
+        waypoint_rot = np.array(p.getEulerFromQuaternion(orn))
+        # relative position state
+        object_rel_pos = object_pos - robot_state[0: 3]
+
+        # ============================= TWO ENDS =============================
+        # NOTE: Below are additional information for two ends of the needle.
+        #       The two ends are at 90 degrees from the center.
+        #       I have modified needle_40mm.urdf to add two additional links.
+        left_90_pos, left_90_orn = get_link_pose(self.obj_id, 6)
+        left_90_pos = np.array(left_90_pos)
+        left_90_orn = np.array(p.getEulerFromQuaternion(left_90_orn))
+        right_90_pos, right_90_orn = get_link_pose(self.obj_id, 7)
+        right_90_pos = np.array(right_90_pos)
+        right_90_orn = np.array(p.getEulerFromQuaternion(right_90_orn))
+    
+        # ============================= END ==================================
+        # object/waypoint position
+        achieved_goal = object_pos.copy() if not self._waypoint_goal else waypoint_pos.copy()
+
+        observation = np.concatenate([
+            robot_state, object_pos.ravel(), object_rel_pos.ravel(),
+            waypoint_pos.ravel(), waypoint_rot.ravel(), left_90_pos.ravel(), left_90_orn.ravel(),
+            right_90_pos.ravel(), right_90_orn.ravel()
+        ])
+        
+        obs = {
+            'observation': observation.copy(),
+            'achieved_goal': achieved_goal.copy(),
+            'desired_goal': self.goal.copy()
+        }
+        return obs
+
 if __name__ == "__main__":
     env = NeedlePickCylinder(render_mode='human')  # create one process and corresponding env
 
