@@ -292,8 +292,12 @@ class NeedlePickSphere(PsmEnv):
         # NOTE: Below are additional information for two ends of the needle.
         #       The two ends are at 90 degrees from the center.
         #       I have modified needle_40mm.urdf to add two additional links.
-        left_90_pos, left_90_orn = np.array(get_link_pose(self.obj_id, 6))
-        right_90_pos, right_90_orn = np.array(get_link_pose(self.obj_id, 7))
+        left_90_pos, left_90_orn = get_link_pose(self.obj_id, 6)
+        left_90_pos = np.array(left_90_pos)
+        left_90_orn = np.array(left_90_orn)
+        right_90_pos, right_90_orn = get_link_pose(self.obj_id, 7)
+        right_90_pos = np.array(right_90_pos)
+        right_90_orn = np.array(right_90_orn)
     
         # ============================= END ==================================
         # object/waypoint position
