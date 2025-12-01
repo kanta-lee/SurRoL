@@ -136,4 +136,32 @@
         <!--    -cos(60)*R, sin(60)*R, 0)-->
         <origin rpy="0 0 -1.047198" xyz="-0.0100000 0.0173205 0"/>
     </joint>
+
+    <link name="waypoint_6">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <mass value=".0"/>
+            <inertia ixx="0." ixy="0" ixz="0" iyy="0." iyz="0" izz="0."/>
+        </inertial>
+    </link>
+
+    <joint name="waypoint_joint_6" type="fixed">
+        <parent link="baseLink"/>
+        <child link="waypoint_6"/>
+        <origin rpy="0 0 1.570796" xyz="0 -0.02 0"/>
+    </joint>
+
+    <link name="waypoint_7">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <mass value=".0"/>
+            <inertia ixx="0." ixy="0" ixz="0" iyy="0." iyz="0" izz="0."/>
+        </inertial>
+    </link>
+
+    <joint name="waypoint_joint_7" type="fixed">
+        <parent link="baseLink"/>
+        <child link="waypoint_7"/>
+        <origin rpy="0 0 -1.570796" xyz="0 0.02 0"/>
+    </joint>
 </robot>
