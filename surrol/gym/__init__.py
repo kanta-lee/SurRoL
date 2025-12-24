@@ -148,7 +148,7 @@ register(
 )
 register(
     id='NeedlePick-v7',
-    entry_point='surrol.tasks.needle_pick_wound_for_clf:NeedlePickWoundForCLF',
+    entry_point='surrol.tasks.needle_pick_wound_for_clf:NeedlePickWoundCLF',
     max_episode_steps=100,
 )
 
