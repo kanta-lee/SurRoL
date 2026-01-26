@@ -1,3 +1,4 @@
+import surrol.gym  # Register SurRoL environments
 from gym.envs.registration import register
 
 
@@ -149,6 +150,12 @@ register(
 register(
     id='NeedlePick-v7',
     entry_point='surrol.tasks.needle_pick_wound_for_clf:NeedlePickWoundCLF',
+    max_episode_steps=100,
+)
+
+register(
+    id='NeedlePick-v8',
+    entry_point='surrol.tasks.needle_pick_lung_clf_cbf:NeedlePickLungCLF',
     max_episode_steps=100,
 )
 
