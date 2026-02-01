@@ -10,6 +10,7 @@ from surrol.utils.pybullet_utils import (
 )
 from surrol.const import ASSET_DIR_PATH
 from typing import Tuple
+from scipy.spatial.transform import Rotation
 
 
 class NeedlePickCylinder(PsmEnv):
