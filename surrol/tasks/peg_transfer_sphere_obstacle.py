@@ -9,6 +9,7 @@ from surrol.utils.pybullet_utils import (
     wrap_angle
 )
 from surrol.const import ASSET_DIR_PATH
+from typing import Tuple
 
 
 class PegTransfer(PsmEnv):
@@ -62,9 +63,21 @@ class PegTransfer(PsmEnv):
         self.obj_id, self.obj_link1 = self._blocks[0], 1
         
         # For obstacle plotting
-        obstacle_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'),
-                                 globalScaling=self.SCALING)
-        self.obj_ids['obstacle'].append(obstacle_id)  # 0
+        # self.sphere_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'), globalScaling=self.SCALING)
+        self.sphere_radius = 0.05
+        sphere_pos = [workspace_limits[0].mean(), workspace_limits[1].mean(), workspace_limits[2][0]+0.25]
+        
+        self.sphere_id = p.createMultiBody(
+            baseMass=0,
+            baseVisualShapeIndex=p.createVisualShape(
+                p.GEOM_SPHERE, 
+                radius=self.sphere_radius, 
+                rgbaColor=[0, 1, 0, 0.3]
+            ),
+            basePosition=sphere_pos,
+            baseOrientation=p.getQuaternionFromEuler([0, 0, 0])
+        )
+        self.obj_ids['obstacle'].append(self.sphere_id)  # 0
 
     def _is_success(self, achieved_goal, desired_goal):
         """ Indicates whether or not the achieved goal successfully achieved the desired goal.
@@ -87,10 +100,10 @@ class PegTransfer(PsmEnv):
         super()._sample_goal_callback()
         
         # Reset obstacle position (constant so far)
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0],
-            np.array([self.goal[0], self.goal[1] - 0.12, self.goal[2] + 0.1]),
-            (0, 0, 0, 1))
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][0],
+        #     np.array([self.goal[0], self.goal[1] , self.goal[2] + 0.15]),
+        #     (0, 0, 0, 1))
         
         self._waypoints = [None, None, None, None, None, None]  # six waypoints
         pos_obj, orn_obj = get_link_pose(self.obj_id, self.obj_link1)
@@ -143,6 +156,31 @@ class PegTransfer(PsmEnv):
             break
 
         return action
+    
+    def check_collision(self):
+        """
+        Check if the end-effector is inside the sphere.
+        
+        Returns:
+            bool: True if end-effector is inside the sphere, False otherwise
+        """
+        psm_pos = self._get_robot_state(0)[0:3]
+        center, radius = self.get_sphere_prop()
+        b = np.sum((center - psm_pos) ** 2) - radius ** 2
+        return b <= 0
+    
+    def get_sphere_prop(self) -> Tuple[np.ndarray, float]:
+        """
+        Retrieves the properties of the sphere obstacle.
+        
+        Returns:
+            A tuple containing the sphere's center and radius.
+            - center (np.ndarray): The center coordinates of the sphere.
+            - radius (float): The radius of the sphere.
+        """
+        center, _ = p.getBasePositionAndOrientation(self.sphere_id)
+        radius = p.getVisualShapeData(self.sphere_id)[0][3][0]
+        return np.array(center), radius
 
 
 if __name__ == "__main__":
