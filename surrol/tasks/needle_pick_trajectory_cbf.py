@@ -13,14 +13,17 @@ from typing import Tuple
 
 OBJ_FILENAME = 'lung/lungs.obj' 
 
-class NeedlePickLungCLF(PsmEnv):
+class NeedlePickTrajectoryCBF(PsmEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
     WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05),
                         (0.685, 0.745))  # reduce tip pad contact
     SCALING = 5.
+    
+    # Trajectory type for obstacle placement: 'line', 'circle', or 'triangle'
+    TRAJ_TYPE = 'line'  # Can be overridden via command line or config
 
     def _env_setup(self):
-        super(NeedlePickLungCLF, self)._env_setup()
+        super(NeedlePickTrajectoryCBF, self)._env_setup()
         self.has_object = True
         self._waypoint_goal = True
 
@@ -48,9 +51,9 @@ class NeedlePickLungCLF(PsmEnv):
                             globalScaling=self.SCALING)
         self.obj_ids['fixed'].append(obj_id)
 
-        # ==============================================================================
-        #                               SUTURE PAD (OBJ LOADER)
-        # ==============================================================================
+        # # ==============================================================================
+        # #                               SUTURE PAD (OBJ LOADER)
+        # # ==============================================================================
         
         obj_path = os.path.join(ASSET_DIR_PATH, OBJ_FILENAME)
         if not os.path.exists(obj_path):
@@ -82,63 +85,67 @@ class NeedlePickLungCLF(PsmEnv):
         self.cylinder_offset = np.array([0.0, 0.04, -0.05]) # 用于 sample_goal 里的偏移
         self.cyl_radius = 0.05 # 保留用于红点定位
 
-        # 3. 创建视觉形状 (Visual)
-        visual_shape_id = p.createVisualShape(
-            shapeType=p.GEOM_MESH,
-            fileName=obj_path,
-            meshScale=mesh_scale
-            # 不设置 rgbaColor，让它使用 MTL 文件中的材质
-            # 如果 MTL 不生效，可以尝试设置 rgbaColor=[0.8, 0.5, 0.4, 1.0] 等
-        )
+        # # 3. 创建视觉形状 (Visual)
+        # visual_shape_id = p.createVisualShape(
+        #     shapeType=p.GEOM_MESH,
+        #     fileName=obj_path,
+        #     meshScale=mesh_scale
+        #     # 不设置 rgbaColor，让它使用 MTL 文件中的材质
+        #     # 如果 MTL 不生效，可以尝试设置 rgbaColor=[0.8, 0.5, 0.4, 1.0] 等
+        # )
 
-        # 4. 创建碰撞形状 (Collision)
-        collision_shape_id = p.createCollisionShape(
-            shapeType=p.GEOM_MESH,
-            fileName=obj_path,
-            meshScale=mesh_scale,
-            flags=p.GEOM_FORCE_CONCAVE_TRIMESH
-        )
-        # 让物体正对着观察者竖起来：尝试不同的旋转角度
+        # # 4. 创建碰撞形状 (Collision)
+        # collision_shape_id = p.createCollisionShape(
+        #     shapeType=p.GEOM_MESH,
+        #     fileName=obj_path,
+        #     meshScale=mesh_scale,
+        #     flags=p.GEOM_FORCE_CONCAVE_TRIMESH
+        # )
+        # # 让物体正对着观察者竖起来：尝试不同的旋转角度
 
-        pad_orn = p.getQuaternionFromEuler([0, np.pi / 2, np.pi])  # 先试X轴，如果不对可改为 [0, np.pi/2, 0] 或其他 
-        # 5. 创建多体
-        self.cylinder_id = p.createMultiBody(
-            baseMass=0, # 0 = 静态物体
-            # baseCollisionShapeIndex=collision_shape_id,
-            baseCollisionShapeIndex=-1,
-            baseVisualShapeIndex=visual_shape_id,
-            basePosition=np.array(suture_pad_pos) * self.SCALING,
-            baseOrientation=pad_orn
-        )
+        # pad_orn = p.getQuaternionFromEuler([0, np.pi / 2, np.pi])  # 先试X轴，如果不对可改为 [0, np.pi/2, 0] 或其他 
+        # # 5. 创建多体
+        # self.cylinder_id = p.createMultiBody(
+        #     baseMass=0, # 0 = 静态物体
+        #     # baseCollisionShapeIndex=collision_shape_id,
+        #     baseCollisionShapeIndex=-1,
+        #     baseVisualShapeIndex=visual_shape_id,
+        #     basePosition=np.array(suture_pad_pos) * self.SCALING,
+        #     baseOrientation=pad_orn
+        # )
         
-        self.obj_ids['obstacle'].append(self.cylinder_id)
+        # self.obj_ids['obstacle'].append(self.cylinder_id)
         
         # Create obstacle sphere
-        self.obstacle_radius = 0.006 * self.SCALING  # 半径 (大约 1.5cm * 缩放)
-        self.obstacle_offset = np.array([0.0, -0.01, 0.03]) * self.SCALING 
+        self.obstacle_radius = 0.018  # 半径
+        self.start_pos = np.array(pos)  # 保存起始位置
+        self.obstacle_z_offset = -0.06  # z轴偏移量
+        
+        # 计算轨迹中点位置，根据轨迹类型
+        obstacle_pos = self._calculate_trajectory_midpoint(self.start_pos, self.TRAJ_TYPE)
 
         self.obstacle_id = p.createMultiBody(
             baseMass=0, # 静态
             baseVisualShapeIndex=p.createVisualShape(
                 p.GEOM_SPHERE, 
                 radius=self.obstacle_radius, 
-                rgbaColor=[1, 0, 0, 1]  # 青色 (Cyan) [R, G, B, Alpha]
+                rgbaColor=[1, 0, 0, 1]  # 红色
             ),
             baseCollisionShapeIndex=p.createCollisionShape(
                 p.GEOM_SPHERE, 
                 radius=self.obstacle_radius
             ),
-            basePosition=self.cylinder_center + self.obstacle_offset,
+            basePosition=obstacle_pos,
             baseOrientation=[0, 0, 0, 1]
         )
         
         # 将其加入 obstacle 列表
         self.obj_ids['obstacle'].append(self.obstacle_id)
         # 调试：检查视觉形状信息
-        visual_info = p.getVisualShapeData(self.cylinder_id)
-        print(f"[DEBUG] Visual shapes for suture pad: {len(visual_info)} shapes")
-        for i, shape in enumerate(visual_info):
-            print(f"[DEBUG] Shape {i}: {shape}")
+        # visual_info = p.getVisualShapeData(self.cylinder_id)
+        # print(f"[DEBUG] Visual shapes for suture pad: {len(visual_info)} shapes")
+        # for i, shape in enumerate(visual_info):
+        #     print(f"[DEBUG] Shape {i}: {shape}")
 
 
         # needle 起始位置设置
@@ -188,6 +195,63 @@ class NeedlePickLungCLF(PsmEnv):
         # )
         # self.obj_ids['fixed'].append(self.sphere_id_2) # 3
     
+    def _calculate_trajectory_midpoint(self, start_pos: np.ndarray, traj_type: str) -> np.ndarray:
+        """
+        Calculate the midpoint of the trajectory based on trajectory type.
+        The obstacle will be placed at this midpoint with a z offset.
+        
+        Args:
+            start_pos: Starting position of the robot
+            traj_type: Type of trajectory ('line', 'circle', 'triangle')
+            
+        Returns:
+            The position for the obstacle (trajectory midpoint with z offset)
+        """
+        start = np.asarray(start_pos, dtype=np.float32)
+        
+        if traj_type == 'line':
+            # For line trajectory, the goal is in negative y direction
+            # Based on CLF._init_trajectory_state with traj_type='line'
+            # goal = start + [0, -0.3, 0] (from _init_linear_state_cbf in clf.py)
+            goal = start + np.array([0.0, -0.3, 0.0], dtype=np.float32)
+            midpoint = (start + goal) / 2
+            
+        elif traj_type == 'circle':
+            # For circle trajectory, midpoint is on the opposite side of the circle
+            # Based on CLF._init_trajectory_state with traj_type='circle'
+            circle_radius = 0.12
+            theta_start = np.pi / 2  # Starting angle
+            center_xy = start[:2] - circle_radius * np.array([np.cos(theta_start), np.sin(theta_start)], dtype=np.float32)
+            
+            # Midpoint is at theta_start - π (opposite side of circle)
+            theta_mid = theta_start - np.pi
+            midpoint = np.array([
+                center_xy[0] + circle_radius * np.cos(theta_mid),
+                center_xy[1] + circle_radius * np.sin(theta_mid),
+                start[2]
+            ], dtype=np.float32)
+            
+        elif traj_type == 'triangle':
+            # For triangle trajectory, midpoint is around vertex1 or middle of edge
+            # Based on CLF._init_trajectory_state with traj_type='triangle'
+            triangle_size = 0.1
+            triangle_height = triangle_size * np.sqrt(3) / 2
+            vertex1 = start + np.array([triangle_size, 0, 0], dtype=np.float32)
+            vertex2 = start + np.array([triangle_size / 2, -triangle_height, 0], dtype=np.float32)
+            
+            # Midpoint is the center of the second edge (vertex1 -> vertex2)
+            midpoint = (vertex1 + vertex2) / 2
+            
+        else:
+            # Default: just offset from start
+            midpoint = start + np.array([0.0, -0.15, 0.0], dtype=np.float32)
+        
+        # Apply z offset
+        obstacle_pos = np.array([midpoint[0], midpoint[1], midpoint[2] + self.obstacle_z_offset])
+        
+        print(f"[INFO] Obstacle placed at trajectory midpoint for traj_type='{traj_type}': {obstacle_pos}")
+        return obstacle_pos
+
     def get_sphere_prop(self) -> Tuple[np.ndarray, float]:
         """
         Retrieves the properties of the sphere obstacle.
@@ -198,8 +262,23 @@ class NeedlePickLungCLF(PsmEnv):
             - radius (float): The radius of the sphere.
         """
         center, _ = p.getBasePositionAndOrientation(self.obstacle_id)
+        # radius = p.getVisualShapeData(self.obstacle_id)[0][3][0] + 0.008 * self.SCALING
         radius = p.getVisualShapeData(self.obstacle_id)[0][3][0] + 0.008 * self.SCALING
         return np.array(center), radius
+
+    def check_collision(self) -> bool:
+        """
+        检查机器人是否与小球障碍物发生碰撞。
+        
+        Returns:
+            bool: 如果发生碰撞返回 True，否则返回 False
+        """
+        # 使用 PyBullet 的接触点检测
+        contact_points = p.getContactPoints(
+            bodyA=self.psm1.body,
+            bodyB=self.obstacle_id
+        )
+        return len(contact_points) > 0
 
     def _sample_goal(self) -> np.ndarray:
         workspace_limits = self.workspace_limits1
@@ -237,11 +316,11 @@ class NeedlePickLungCLF(PsmEnv):
             self.cylinder_center,
             p.getQuaternionFromEuler([0, np.pi / 2 , np.pi]))  # 与创建时的朝向保持一致
         
-        # 让小球始终跟随肺部模型移动
-        new_obstacle_pos = self.cylinder_center + self.obstacle_offset
+        # 球的位置基于轨迹中点
+        obstacle_pos = self._calculate_trajectory_midpoint(self.start_pos, self.TRAJ_TYPE)
         p.resetBasePositionAndOrientation(
             self.obstacle_id,
-            new_obstacle_pos,
+            obstacle_pos,
             [0, 0, 0, 1]
         )
         # # set points (red markers)
@@ -307,7 +386,7 @@ class NeedlePickLungCLF(PsmEnv):
 
 if __name__ == "__main__":
     # 记得实例化正确的类名
-    env = NeedlePickLungCLF(render_mode='human')
+    env = NeedlePickTrajectoryCBF(render_mode='human')
 
     env.test()
     env.close()

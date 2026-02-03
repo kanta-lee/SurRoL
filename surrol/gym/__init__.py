@@ -127,6 +127,16 @@ register(
     entry_point='surrol.tasks.needle_pick_wound_for_clf:NeedlePickWoundCLF',
     max_episode_steps=100,
 )
+register(
+    id='NeedlePick-v9',
+    entry_point='surrol.tasks.needle_pick_trajectory_clf:NeedlePickTrajectoryCLF',
+    max_episode_steps=100,
+)
+register(
+    id='NeedlePick-v10',
+    entry_point='surrol.tasks.needle_pick_trajectory_cbf:NeedlePickTrajectoryCBF',
+    max_episode_steps=100,
+)
 
 register(
     id='NeedlePick-v8',

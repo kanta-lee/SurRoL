@@ -13,14 +13,14 @@ from typing import Tuple
 
 OBJ_FILENAME = 'lung/lungs.obj' 
 
-class NeedlePickLungCLF(PsmEnv):
+class NeedlePickTrajectoryCLF(PsmEnv):
     POSE_TRAY = ((0.55, 0, 0.6751), (0, 0, 0))
     WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05),
                         (0.685, 0.745))  # reduce tip pad contact
     SCALING = 5.
 
     def _env_setup(self):
-        super(NeedlePickLungCLF, self)._env_setup()
+        super(NeedlePickTrajectoryCLF, self)._env_setup()
         self.has_object = True
         self._waypoint_goal = True
 
@@ -82,63 +82,63 @@ class NeedlePickLungCLF(PsmEnv):
         self.cylinder_offset = np.array([0.0, 0.04, -0.05]) # 用于 sample_goal 里的偏移
         self.cyl_radius = 0.05 # 保留用于红点定位
 
-        # 3. 创建视觉形状 (Visual)
-        visual_shape_id = p.createVisualShape(
-            shapeType=p.GEOM_MESH,
-            fileName=obj_path,
-            meshScale=mesh_scale
-            # 不设置 rgbaColor，让它使用 MTL 文件中的材质
-            # 如果 MTL 不生效，可以尝试设置 rgbaColor=[0.8, 0.5, 0.4, 1.0] 等
-        )
+        # # 3. 创建视觉形状 (Visual)
+        # visual_shape_id = p.createVisualShape(
+        #     shapeType=p.GEOM_MESH,
+        #     fileName=obj_path,
+        #     meshScale=mesh_scale
+        #     # 不设置 rgbaColor，让它使用 MTL 文件中的材质
+        #     # 如果 MTL 不生效，可以尝试设置 rgbaColor=[0.8, 0.5, 0.4, 1.0] 等
+        # )
 
-        # 4. 创建碰撞形状 (Collision)
-        collision_shape_id = p.createCollisionShape(
-            shapeType=p.GEOM_MESH,
-            fileName=obj_path,
-            meshScale=mesh_scale,
-            flags=p.GEOM_FORCE_CONCAVE_TRIMESH
-        )
-        # 让物体正对着观察者竖起来：尝试不同的旋转角度
+        # # 4. 创建碰撞形状 (Collision)
+        # collision_shape_id = p.createCollisionShape(
+        #     shapeType=p.GEOM_MESH,
+        #     fileName=obj_path,
+        #     meshScale=mesh_scale,
+        #     flags=p.GEOM_FORCE_CONCAVE_TRIMESH
+        # )
+        # # 让物体正对着观察者竖起来：尝试不同的旋转角度
 
-        pad_orn = p.getQuaternionFromEuler([0, np.pi / 2, np.pi])  # 先试X轴，如果不对可改为 [0, np.pi/2, 0] 或其他 
-        # 5. 创建多体
-        self.cylinder_id = p.createMultiBody(
-            baseMass=0, # 0 = 静态物体
-            # baseCollisionShapeIndex=collision_shape_id,
-            baseCollisionShapeIndex=-1,
-            baseVisualShapeIndex=visual_shape_id,
-            basePosition=np.array(suture_pad_pos) * self.SCALING,
-            baseOrientation=pad_orn
-        )
+        # pad_orn = p.getQuaternionFromEuler([0, np.pi / 2, np.pi])  # 先试X轴，如果不对可改为 [0, np.pi/2, 0] 或其他 
+        # # 5. 创建多体
+        # self.cylinder_id = p.createMultiBody(
+        #     baseMass=0, # 0 = 静态物体
+        #     # baseCollisionShapeIndex=collision_shape_id,
+        #     baseCollisionShapeIndex=-1,
+        #     baseVisualShapeIndex=visual_shape_id,
+        #     basePosition=np.array(suture_pad_pos) * self.SCALING,
+        #     baseOrientation=pad_orn
+        # )
         
-        self.obj_ids['obstacle'].append(self.cylinder_id)
+        # self.obj_ids['obstacle'].append(self.cylinder_id)
         
-        # Create obstacle sphere
-        self.obstacle_radius = 0.006 * self.SCALING  # 半径 (大约 1.5cm * 缩放)
-        self.obstacle_offset = np.array([0.0, -0.01, 0.03]) * self.SCALING 
+        # # Create obstacle sphere
+        # self.obstacle_radius = 0.006 * self.SCALING  # 半径 (大约 1.5cm * 缩放)
+        # self.obstacle_offset = np.array([0.0, -0.01, 0.03]) * self.SCALING 
 
-        self.obstacle_id = p.createMultiBody(
-            baseMass=0, # 静态
-            baseVisualShapeIndex=p.createVisualShape(
-                p.GEOM_SPHERE, 
-                radius=self.obstacle_radius, 
-                rgbaColor=[1, 0, 0, 1]  # 青色 (Cyan) [R, G, B, Alpha]
-            ),
-            baseCollisionShapeIndex=p.createCollisionShape(
-                p.GEOM_SPHERE, 
-                radius=self.obstacle_radius
-            ),
-            basePosition=self.cylinder_center + self.obstacle_offset,
-            baseOrientation=[0, 0, 0, 1]
-        )
+        # self.obstacle_id = p.createMultiBody(
+        #     baseMass=0, # 静态
+        #     baseVisualShapeIndex=p.createVisualShape(
+        #         p.GEOM_SPHERE, 
+        #         radius=self.obstacle_radius, 
+        #         rgbaColor=[1, 0, 0, 1]  # 青色 (Cyan) [R, G, B, Alpha]
+        #     ),
+        #     baseCollisionShapeIndex=p.createCollisionShape(
+        #         p.GEOM_SPHERE, 
+        #         radius=self.obstacle_radius
+        #     ),
+        #     basePosition=self.cylinder_center + self.obstacle_offset,
+        #     baseOrientation=[0, 0, 0, 1]
+        # )
         
-        # 将其加入 obstacle 列表
-        self.obj_ids['obstacle'].append(self.obstacle_id)
-        # 调试：检查视觉形状信息
-        visual_info = p.getVisualShapeData(self.cylinder_id)
-        print(f"[DEBUG] Visual shapes for suture pad: {len(visual_info)} shapes")
-        for i, shape in enumerate(visual_info):
-            print(f"[DEBUG] Shape {i}: {shape}")
+        # # # 将其加入 obstacle 列表
+        # # self.obj_ids['obstacle'].append(self.obstacle_id)
+        # # 调试：检查视觉形状信息
+        # visual_info = p.getVisualShapeData(self.cylinder_id)
+        # print(f"[DEBUG] Visual shapes for suture pad: {len(visual_info)} shapes")
+        # for i, shape in enumerate(visual_info):
+        #     print(f"[DEBUG] Shape {i}: {shape}")
 
 
         # needle 起始位置设置
@@ -231,19 +231,19 @@ class NeedlePickLungCLF(PsmEnv):
         # cylinder_offset 需要乘以 SCALING 以匹配缩放后的坐标系
         self.cylinder_center = np.array([self.goal[0], self.goal[1], self.goal[2]]) + self.cylinder_offset * self.SCALING
         
-        # 保持竖起来的朝向：与创建时保持一致
-        p.resetBasePositionAndOrientation(
-            self.obj_ids['obstacle'][0],
-            self.cylinder_center,
-            p.getQuaternionFromEuler([0, np.pi / 2 , np.pi]))  # 与创建时的朝向保持一致
+        # # 保持竖起来的朝向：与创建时保持一致
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][0],
+        #     self.cylinder_center,
+        #     p.getQuaternionFromEuler([0, np.pi / 2 , np.pi]))  # 与创建时的朝向保持一致
         
-        # 让小球始终跟随肺部模型移动
-        new_obstacle_pos = self.cylinder_center + self.obstacle_offset
-        p.resetBasePositionAndOrientation(
-            self.obstacle_id,
-            new_obstacle_pos,
-            [0, 0, 0, 1]
-        )
+        # # 让小球始终跟随肺部模型移动
+        # new_obstacle_pos = self.cylinder_center + self.obstacle_offset
+        # p.resetBasePositionAndOrientation(
+        #     self.obstacle_id,
+        #     new_obstacle_pos,
+        #     [0, 0, 0, 1]
+        # )
         # # set points (red markers)
         # point1_angle = np.pi/4
         # point2_angle = np.pi/4 * 3
@@ -307,7 +307,7 @@ class NeedlePickLungCLF(PsmEnv):
 
 if __name__ == "__main__":
     # 记得实例化正确的类名
-    env = NeedlePickLungCLF(render_mode='human')
+    env = NeedlePickTrajectoryCLF(render_mode='human')
 
     env.test()
     env.close()
