@@ -12,7 +12,7 @@ from typing import Tuple
 from scipy.spatial.transform import Rotation
 
 
-class NeedleReach(PsmEnv):
+class NeedleReachPlate(PsmEnv):
     """
     Refer to Gym FetchReach
     https://github.com/openai/gym/blob/master/gym/envs/robotics/fetch/reach.py
@@ -22,7 +22,7 @@ class NeedleReach(PsmEnv):
     SCALING = 5.
 
     def _env_setup(self):
-        super(NeedleReach, self)._env_setup()
+        super(NeedleReachPlate, self)._env_setup()
         self.has_object = False
 
         # robot
@@ -87,7 +87,7 @@ class NeedleReach(PsmEnv):
 
     def _set_action(self, action: np.ndarray):
         action[3] = 0  # no yaw change
-        super(NeedleReach, self)._set_action(action)
+        super(NeedleReachPlate, self)._set_action(action)
 
     def _sample_goal(self) -> np.ndarray:
         """ Samples a new goal and returns it.
@@ -166,7 +166,7 @@ class NeedleReach(PsmEnv):
 
 
 if __name__ == "__main__":
-    env = NeedleReach(render_mode='human')  # create one process and corresponding env
+    env = NeedleReachPlate(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

@@ -11,7 +11,7 @@ from surrol.const import ASSET_DIR_PATH
 from typing import Tuple
 
 
-class NeedleReach(PsmEnv):
+class NeedleReachSphere(PsmEnv):
     """
     Refer to Gym FetchReach
     https://github.com/openai/gym/blob/master/gym/envs/robotics/fetch/reach.py
@@ -21,7 +21,7 @@ class NeedleReach(PsmEnv):
     SCALING = 5.
 
     def _env_setup(self):
-        super(NeedleReach, self)._env_setup()
+        super(NeedleReachSphere, self)._env_setup()
         self.has_object = False
 
         # robot
@@ -77,7 +77,7 @@ class NeedleReach(PsmEnv):
 
     def _set_action(self, action: np.ndarray):
         action[3] = 0  # no yaw change
-        super(NeedleReach, self)._set_action(action)
+        super(NeedleReachSphere, self)._set_action(action)
     
     def check_collision(self):
         """
@@ -128,7 +128,7 @@ class NeedleReach(PsmEnv):
 
 
 if __name__ == "__main__":
-    env = NeedleReach(render_mode='human')  # create one process and corresponding env
+    env = NeedleReachSphere(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()

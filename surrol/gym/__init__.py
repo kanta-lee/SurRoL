@@ -16,17 +16,17 @@ register(
 )
 register(
     id='NeedleReach-v1',
-    entry_point='surrol.tasks.needle_reach_sphere:NeedleReach',
+    entry_point='surrol.tasks.needle_reach_plate_obstacle:NeedleReachPlate',
     max_episode_steps=100,
 )
 register(
     id='NeedleReach-v2',
-    entry_point='surrol.tasks.needle_reach_surface_obstacle:NeedleReach',
+    entry_point='surrol.tasks.needle_reach_sphere:NeedleReachSphere',
     max_episode_steps=100,
 )
 register(
     id='NeedleReach-v3',
-    entry_point='surrol.tasks.needle_reach_plate_obstacle:NeedleReach',
+    entry_point='surrol.tasks.needle_reach_surface_obstacle:NeedleReach',
     max_episode_steps=100,
 )
 register(
@@ -66,6 +66,16 @@ register(
     entry_point='surrol.tasks.gauze_retrieve_sphere:GauzeRetrieveSphere',
     max_episode_steps=100,
 )
+# register(
+#     id='GauzeRetrieve-v1',
+#     entry_point='surrol.tasks.gauze_retrieve_sphere_obstacle:GauzeRetrieve',
+#     max_episode_steps=100,
+# )
+# register(
+#     id='GauzeRetrieve-v2',
+#     entry_point='surrol.tasks.gauze_retrieve_surface_obstacle:GauzeRetrieve',
+#     max_episode_steps=100,
+# )
 register(
     id='GauzeRetrieve-v3',
     entry_point='surrol.tasks.gauze_retrieve_plate_obstacle:GauzeRetrieve',
@@ -107,6 +117,21 @@ register(
     entry_point='surrol.tasks.needle_pick_hemisphere:NeedlePick',
     max_episode_steps=100,
 )
+# register(
+#     id='NeedlePick-v1',
+#     entry_point='surrol.tasks.needle_pick_sphere_obstacle:NeedlePick',
+#     max_episode_steps=100,
+# )
+# register(
+#     id='NeedlePick-v2',
+#     entry_point='surrol.tasks.needle_pick_surface_obstacle:NeedlePick',
+#     max_episode_steps=100,
+# )
+# register(
+#     id='NeedlePick-v3',
+#     entry_point='surrol.tasks.needle_pick_plate_obstacle:NeedlePick',
+#     max_episode_steps=100,
+# )
 register(
     id='NeedlePick-v4',
     entry_point='surrol.tasks.needle_pick_half_sphere_obstacle:NeedlePick',
