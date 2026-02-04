@@ -176,17 +176,17 @@ register(
 )
 register(
     id='PegTransfer-v1',
-    entry_point='surrol.tasks.peg_transfer_sphere_obstacle:PegTransfer',
+    entry_point='surrol.tasks.peg_transfer_plate_obstacle:PegTransferPlate',
     max_episode_steps=100,
 )
 register(
     id='PegTransfer-v2',
-    entry_point='surrol.tasks.peg_transfer_surface_obstacle:PegTransfer',
+    entry_point='surrol.tasks.peg_transfer_sphere_obstacle:PegTransferSphere',
     max_episode_steps=100,
 )
 register(
     id='PegTransfer-v3',
-    entry_point='surrol.tasks.peg_transfer_plate_obstacle:PegTransfer',
+    entry_point='surrol.tasks.peg_transfer_surface_obstacle:PegTransfer',
     max_episode_steps=100,
 )
 register(

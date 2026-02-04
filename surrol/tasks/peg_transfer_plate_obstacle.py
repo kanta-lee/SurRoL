@@ -13,7 +13,7 @@ from typing import Tuple
 from scipy.spatial.transform import Rotation
 
 
-class PegTransfer(PsmEnv):
+class PegTransferPlate(PsmEnv):
     POSE_BOARD = ((0.55, 0, 0.6861), (0, 0, 0))  # 0.675 + 0.011 + 0.001
     WORKSPACE_LIMITS = ((0.50, 0.60), (-0.05, 0.05), (0.686, 0.745))
     SCALING = 5.
@@ -21,7 +21,7 @@ class PegTransfer(PsmEnv):
     # TODO: grasp is sometimes not stable; check how to fix it
 
     def _env_setup(self):
-        super(PegTransfer, self)._env_setup()
+        super(PegTransferPlate, self)._env_setup()
         self.has_object = True
 
         # robot
