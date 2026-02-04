@@ -68,10 +68,13 @@ class PegTransferPlate(PsmEnv):
         # ==============================================================================
         
         cyl_radius = 0.04
-        cyl_length = 0.01
+        cyl_length = 0.04
+        # Random offset in x and y directions within a small range around center
+        random_offset_x = np.random.uniform(-0.02, 0.02)
+        random_offset_y = np.random.uniform(-0.02, 0.02)
         cyl_pos = (
-            workspace_limits[0].mean(),
-            workspace_limits[1].mean(),
+            workspace_limits[0].mean() + random_offset_x,
+            workspace_limits[1].mean() + random_offset_y,
             workspace_limits[2][0] + 0.25
         )
 
@@ -138,10 +141,10 @@ class PegTransferPlate(PsmEnv):
         self._waypoints[5] = np.array([pos_place[0], pos_place[1], pos_place[2], yaw, 0.5])  # release
 
         # Put the obstacle
-        # p.resetBasePositionAndOrientation(
-        #     self.obj_ids['obstacle'][0], 
-        #     ((self._waypoints[3]+self._waypoints[4])/2)[:3], 
-        #     p.getQuaternionFromEuler([np.pi/2, 0, 0]))
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][0], 
+            ((self._waypoints[3]+self._waypoints[4])/2)[:3], 
+            p.getQuaternionFromEuler([0, 0, 0]))
 
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
@@ -222,7 +225,7 @@ class PegTransferPlate(PsmEnv):
 
 
 if __name__ == "__main__":
-    env = PegTransfer(render_mode='human')  # create one process and corresponding env
+    env = PegTransferPlate(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()
