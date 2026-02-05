@@ -64,7 +64,7 @@ class PegTransferSphere(PsmEnv):
         
         # For obstacle plotting
         # self.sphere_id = p.loadURDF(os.path.join(ASSET_DIR_PATH, 'sphere/obstacle.urdf'), globalScaling=self.SCALING)
-        self.sphere_radius = 0.05
+        self.sphere_radius = 0.04
         sphere_pos = [workspace_limits[0].mean(), workspace_limits[1].mean(), workspace_limits[2][0]+0.25]
         
         self.sphere_id = p.createMultiBody(
@@ -129,6 +129,11 @@ class PegTransferSphere(PsmEnv):
                      self.goal[1] + pos_obj[1] - pos_peg[1], self._waypoints[0][2]]  # consider offset
         self._waypoints[4] = np.array([pos_place[0], pos_place[1], pos_place[2], yaw, -0.5])  # above goal
         self._waypoints[5] = np.array([pos_place[0], pos_place[1], pos_place[2], yaw, 0.5])  # release
+        # Put the obstacle
+        p.resetBasePositionAndOrientation(
+            self.obj_ids['obstacle'][0], 
+            ((self._waypoints[3]+self._waypoints[4])/2)[:3] -np.array([0.0, 0.0, 0.03]), 
+            p.getQuaternionFromEuler([0, 0, 0]))
 
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped block to make it stable
@@ -184,7 +189,7 @@ class PegTransferSphere(PsmEnv):
 
 
 if __name__ == "__main__":
-    env = PegTransfer(render_mode='human')  # create one process and corresponding env
+    env = PegTransferSphere(render_mode='human')  # create one process and corresponding env
 
     env.test()
     env.close()
