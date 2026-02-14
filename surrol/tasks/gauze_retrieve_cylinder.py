@@ -52,11 +52,11 @@ class GauzeRetrieveCylinder(PsmEnv):
         #                                   CYLINDER
         # ==============================================================================
 
-        cyl_radius = 0.07
-        cyl_length = 0.12
+        cyl_radius = 0.06
+        cyl_length = 0.20
         cyl_pos = (
-            workspace_limits[0].mean() + 0.02,
-            workspace_limits[1].mean() + 0.04,
+            workspace_limits[0].mean() + 0.01,
+            workspace_limits[1].mean() + 0.01,
             workspace_limits[2][0] + 0.045
         )
 
