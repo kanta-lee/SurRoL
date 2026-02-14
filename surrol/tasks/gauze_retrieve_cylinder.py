@@ -52,11 +52,11 @@ class GauzeRetrieveCylinder(PsmEnv):
         #                                   CYLINDER
         # ==============================================================================
 
-        cyl_radius = 0.1
-        cyl_length = 0.15
+        cyl_radius = 0.07
+        cyl_length = 0.12
         cyl_pos = (
-            workspace_limits[0].mean(),
-            workspace_limits[1].mean(),
+            workspace_limits[0].mean() + 0.02,
+            workspace_limits[1].mean() + 0.04,
             workspace_limits[2][0] + 0.045
         )
 
@@ -157,6 +157,11 @@ class GauzeRetrieveCylinder(PsmEnv):
                                        pos_obj[2] + (-0.0007 + 0.0102 + 0.005) * self.SCALING, 0., -0.5])  # grasp
         self._waypoints[4] = np.array([self.goal[0], self.goal[1],
                                        self.goal[2] + 0.0102 * self.SCALING, 0., -0.5])  # lift up
+        # # Put the obstacle
+        # p.resetBasePositionAndOrientation(
+        #     self.obj_ids['obstacle'][0], 
+        #     ((self._waypoints[3]+self._waypoints[4])/2)[:3] -np.array([0.0, 0.0, 0.03]), 
+        #     p.getQuaternionFromEuler([0, 0, 0]))
 
     def _meet_contact_constraint_requirement(self):
         # add a contact constraint to the grasped object to make it stable

@@ -51,7 +51,7 @@ class GauzeRetrieveSphere(PsmEnv):
         #                             SPHERE OBSTACLE
         # ==============================================================================
         
-        sphere_radius = 0.1
+        sphere_radius = 0.07
         sphere_pos = [
             workspace_limits[0].mean(), 
             workspace_limits[1].mean(), 
